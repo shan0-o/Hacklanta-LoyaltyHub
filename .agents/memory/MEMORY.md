@@ -1,0 +1,1 @@
+- [Expo Router auth routes](expo-router-auth-routes.md) — route groups are URL-transparent; avoid duplicate group `index` screens and register auth leaf routes explicitly.

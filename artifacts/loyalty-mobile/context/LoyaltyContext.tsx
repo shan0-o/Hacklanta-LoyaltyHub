@@ -214,13 +214,22 @@ function makeId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function LoyaltyProvider({ children }: { children: ReactNode }) {
+export function LoyaltyProvider({
+  children,
+  userId,
+}: {
+  children: ReactNode;
+  userId: string;
+}) {
   const [data, setData] = useState<LoyaltyData>(initialData);
   const [ready, setReady] = useState(false);
+  const storageKey = `${STORAGE_KEY}:${userId}`;
 
   useEffect(() => {
     let mounted = true;
-    AsyncStorage.getItem(STORAGE_KEY)
+    setReady(false);
+    setData(initialData);
+    AsyncStorage.getItem(storageKey)
       .then((saved) => {
         if (!mounted) return;
         if (saved) {
@@ -237,11 +246,11 @@ export function LoyaltyProvider({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
-    if (ready) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)).catch(() => {});
-  }, [data, ready]);
+    if (ready) AsyncStorage.setItem(storageKey, JSON.stringify(data)).catch(() => {});
+  }, [data, ready, storageKey]);
 
   const update = useCallback((transform: (current: LoyaltyData) => LoyaltyData) => {
     setData((current) => transform(current));

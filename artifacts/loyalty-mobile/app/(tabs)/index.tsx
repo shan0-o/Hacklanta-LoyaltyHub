@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useClerk, useUser } from '@clerk/expo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { useColors } from '@/hooks/useColors';
@@ -39,6 +40,8 @@ const currencyPoints = (value: number) => new Intl.NumberFormat('en-US').format(
 export default function LoyaltyHome() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { signOut } = useClerk();
+  const { user } = useUser();
   const {
     businesses,
     favorites,
@@ -78,6 +81,10 @@ export default function LoyaltyHome() {
     (sum, item) => sum + item.member.points,
     0,
   );
+  const accountName =
+    user?.firstName ??
+    user?.primaryEmailAddress?.emailAddress.split('@')[0] ??
+    'there';
 
   const merchantStats = useMemo(() => {
     const members = primaryBusiness?.members ?? [];
@@ -200,9 +207,9 @@ export default function LoyaltyHome() {
         ? 'Your stamp cards'
         : tab === 'discover'
           ? 'Find your next favorite'
-          : tab === 'updates'
+        : tab === 'updates'
             ? 'A little good news'
-            : 'Good morning, Maya';
+            : `Good morning, ${accountName}`;
 
   return (
     <View
@@ -236,6 +243,17 @@ export default function LoyaltyHome() {
               {unreadCount > 0 && <View style={styles.notificationDot} />}
             </Pressable>
           )}
+          <Pressable
+            testID="sign-out"
+            onPress={() => void signOut()}
+            style={({ pressed }) => [
+              styles.iconButton,
+              { backgroundColor: colors.card, opacity: pressed ? 0.7 : 1 },
+            ]}
+            accessibilityLabel="Sign out"
+          >
+            <Ionicons name="log-out-outline" size={19} color={colors.foreground} />
+          </Pressable>
           <Pressable
             testID="role-switch"
             onPress={() => switchRole(role === 'customer' ? 'merchant' : 'customer')}
