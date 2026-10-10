@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Loyalty Loop"
+description = "A mobile loyalty app with a merchant workspace for managing promotions, rewards, tiers, events, giveaways, and loyalty analytics, plus a customer experience for digital stamp cards, points, favorite stores, and redeemable reward notifications."
+version = "1.0.0"
+id = "artifacts/loyalty-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 22240
+
+[services.development]
+run = "pnpm --filter @workspace/loyalty-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/loyalty-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/loyalty-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "22240"
+BASE_PATH = "/"
