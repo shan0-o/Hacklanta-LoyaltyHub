@@ -1,12 +1,12 @@
-## LoyaltyHub
+# LoyaltyHub
 
-# Your Neighborhood Rewarded
+## Your Neighborhood Rewarded
 A digital loyalty and promotions platform built to help small businesses increase customer retention and turn first-time visitors into regulars.
 LoyaltyHub brings traditional punch cards into th digital age, giving independent businesses an accessibe way to reward loyal customers, manage promotions, and understand customer engagement without the developing their own app.
 
 ## Built for Hacklanta 2026| Social Good and Replit Small Business Sponsor Challenge
 
-# The Problem
+## The Problem
 Small businesses thrive on loyal customers but lack the time, financial resources, or technical infrastructure to create their own loyalty applications.
 Traditional paper punch cards are affordable and familiar, but they come with limitation:
   - Customers can lose or forget their cards.
@@ -15,14 +15,14 @@ Traditional paper punch cards are affordable and familiar, but they come with li
   - Existing digital loyalty solutions may require additional  subscriptions, hardware, or point-of-sale integrations.
 We wanted to create a solution that maintains the simplicity pf a traditional punch card while offering the benefits of a modern loyalty platform.
 
-# The Solution
+## The Solution
 LoyaltyHub makes customer loyalty simple for both businesses and shoppers.
 Customers can discover participating local businesses, collect digital stamps, and redeem rewards through one convenient application.
 Businesses can create loyalty programs, manage promotion campaigns, and monitor customer engagement through an intuitive merchant dashboard.
 
-## Key Features
+# Key Features
 
-# Customer Experience
+## Customer Experience
 
 - Digital Loyalty Wallet
 Keep loyalty cards from multiple participating businesses in one place.
@@ -45,7 +45,7 @@ Unlock rewards after collecting the required stamps.
 Initiate redemption directly through the app.
 Maintain a history of loyalty activity.
 
-# Merchant Experience
+## Merchant Experience
 
 - Loyalty Program Management
 Create and customize digital loyalty programs.
@@ -74,9 +74,9 @@ Search and sort customers.
 Review customer stamp progress and activity.
 View recent stamp awards and reward redemptions.
 
-## How LoyaltyHub Works
+# How LoyaltyHub Works
 
-# For Customers
+## For Customers
 Discover a participating small business.
 Join its loyalty program.
 Make a qualifying purchase.
@@ -85,7 +85,7 @@ Have an authorized employee approve the stamp.
 Collect enough stamps to unlock a reward.
 Redeem the reward during a future visit.
 
-# For Businesses
+## For Businesses
 Set up a business loyalty program.
 Choose a reward and its stamp requirement.
 Create promotions to encourage repeat visits.
@@ -94,13 +94,13 @@ Monitor loyalty activity and customer retention.
 
 The business controls its loyalty program while the platform handles digital recordkeeping and reward tracking.
 
-## Demo & Installation
+# Demo & Installation
 
-# Live Demo
+## Live Demo
 LoyaltyHub can be accessed through our published application: [https://loyalty-hub-shannonandjay.replit.app/]
 The demo allows judges to explore both the customer and merchant interfaces, including digital loyalty cards, reward redemption, promotional campaigns, and customer engagement analytics.
 
-# Running Locally
+## Running Locally
 The source code is available in this GitHub repository.
 Requirements:
     •    Node.js
