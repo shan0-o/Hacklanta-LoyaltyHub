@@ -107,9 +107,9 @@ Requirements:
     •    npm
     •    Expo Go (if testing the mobile app)
 Setup:
-    1    Clone this repository.
-    2    Navigate to the project directory.
-    3    Install the project dependencies.
-    4    Start the application using the commands specified in the project's configuration.
-    5    Open the app using the supported development environment.
+1. Clone this repository.
+2. Navigate to the project directory.
+3. Install the project dependencies.
+4. Start the application using the commands specified in the project's configuration.
+5. Open the app using the supported development environment.
 Additional environment configuration may be required.
