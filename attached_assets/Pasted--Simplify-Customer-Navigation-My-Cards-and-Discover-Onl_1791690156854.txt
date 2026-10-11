@@ -1,0 +1,156 @@
+# Simplify Customer Navigation — My Cards and Discover Only
+
+Modify our existing LoyaltyHub application. We want to simplify the CUSTOMER experience by eliminating the separate Home page.
+
+IMPORTANT: Do not rebuild the application. Preserve the current design, database, customer accounts, stamp balances, loyalty functionality, and merchant-facing screens.
+
+## 1. Customer Navigation
+
+The customer side should have ONLY TWO bottom navigation tabs:
+
+- My Cards
+- Discover
+
+Remove the Home tab from customer navigation.
+
+Make My Cards the default landing screen when a customer signs in.
+
+Update navigation and routing so customers no longer depend on the old Home screen.
+
+Do not change merchant navigation or merchant dashboard functionality.
+
+## 2. My Cards Page
+
+Make My Cards the customer's main dashboard.
+
+At the top, display:
+
+"Hello, [Customer's First Name]!"
+
+Subtitle:
+"Your local rewards, all in one place."
+
+Remove the large "Your Perk Points" section and its associated display from the customer experience.
+
+Below the greeting, display all loyalty cards belonging to the customer.
+
+Each card should show:
+- Business name and logo.
+- Loyalty program name.
+- Current stamp balance.
+- Number of stamps needed to unlock a reward.
+- Filled and unfilled stamp indicators.
+- Reward description.
+- Number of stamps remaining.
+- Available reward indicator when eligible.
+- Existing Get Stamp button.
+- Existing Redeem Reward button when eligible.
+
+Display cards with rewards ready for redemption first.
+
+Do not change existing stamp-awarding or redemption authorization logic.
+
+## 3. No Loyalty Cards Empty State
+
+If the customer hasn't joined any businesses, display:
+
+"Your rewards start here!"
+
+"You haven't joined any loyalty programs yet. Discover local businesses and start earning rewards."
+
+Add a button labeled "Discover Businesses" that navigates directly to the existing Discover tab.
+
+Do not display blank cards or fabricate loyalty programs.
+
+## 4. Collapsible Past Activity
+
+On the My Cards page, add a section titled "Past Activity" underneath the loyalty cards.
+
+Make it a collapsible dropdown that is closed by default.
+
+When expanded, show:
+- Business name.
+- Date of transaction.
+- Stamps earned.
+- Bonus stamps earned, where applicable.
+- Rewards redeemed.
+
+Use actual existing transaction history.
+
+Sort newest first.
+
+If there is no activity, display a friendly empty-state message.
+
+## 5. Discover Page
+
+Keep the existing Discover page design.
+
+Make sure merchants the customer has already joined are not shown in recommendation sections such as:
+- "A Place to Try Next"
+- "Find Your Next Fav"
+
+Combine duplicate recommendation sections if appropriate.
+
+Prioritize businesses the customer has NOT joined.
+
+Already-joined businesses may still appear in general search results, but they should have a "Joined" indicator rather than being recommended as new businesses.
+
+Prevent duplicate merchant recommendations.
+
+If there are no new participating businesses to recommend, display:
+
+"You're all caught up!"
+
+"You've discovered all participating businesses for now. Check back for new local spots!"
+
+Do not display an empty section or create fake merchants.
+
+Customers should still be able to browse active promotions and join available loyalty programs.
+
+## 6. Design Requirements
+
+Keep the current LoyaltyHub visual identity:
+- Cream background.
+- Dark green primary color.
+- Soft green accents.
+- Rounded cards.
+- Existing typography.
+- Mobile-friendly design.
+
+The bottom customer navigation should show exactly two tabs: My Cards and Discover.
+
+Do not add a new homepage.
+
+## 7. Preserve Existing Functionality
+
+Do not change:
+- Merchant dashboard.
+- Merchant loyalty management.
+- Staff PIN authorization.
+- Stamp-awarding logic.
+- Reward redemption logic.
+- Business promotions.
+- Existing customer accounts and balances.
+- Backend authentication.
+
+Do not add receipt scanning or QR-code scanning.
+
+## 8. Testing
+
+Verify that:
+1. Customers land on My Cards after signing in.
+2. Only My Cards and Discover appear in customer navigation.
+3. Existing loyalty cards and stamps remain accurate.
+4. Get Stamp and Redeem Reward still work.
+5. Customers without cards can navigate to Discover.
+6. Already-joined businesses are excluded from new-business recommendations.
+7. The Discover page continues to function.
+8. Past Activity expands and collapses.
+9. Merchants can still access all existing merchant pages.
+10. Everything displays properly on mobile.
+
+Only implement these customer navigation and page organization changes.
+
+Do not modify the merchant retention dashboard yet.
+
+Before making changes, inspect the existing navigation and screen components to determine what can be reused. After implementation, summarize the files changed and tests completed.

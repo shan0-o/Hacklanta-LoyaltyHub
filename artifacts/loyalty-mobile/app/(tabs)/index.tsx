@@ -31,9 +31,10 @@ import { LoyaltyActionModal } from '@/components/LoyaltyActionModal';
 import { MerchantActivityChart } from '@/components/MerchantActivityChart';
 
 type Role = 'customer' | 'merchant';
-type CustomerTab = 'home' | 'cards' | 'discover' | 'updates';
+type CustomerTab = 'cards' | 'discover' | 'updates';
 type MerchantTab = 'overview' | 'manage' | 'members';
 type AppTab = CustomerTab | MerchantTab;
+const currencyPoints = (value: number) => new Intl.NumberFormat('en-US').format(value);
 const campaignTypes: CampaignType[] = [
   'Promotion',
   'Reward',
@@ -42,7 +43,6 @@ const campaignTypes: CampaignType[] = [
   'Giveaway',
 ];
 
-const currencyPoints = (value: number) => new Intl.NumberFormat('en-US').format(value);
 
 export default function LoyaltyHome() {
   const colors = useColors();
@@ -70,7 +70,7 @@ export default function LoyaltyHome() {
     markNoticeRead,
   } = useLoyalty();
   const [role, setRole] = useState<Role>('customer');
-  const [tab, setTab] = useState<AppTab>('home');
+  const [tab, setTab] = useState<AppTab>('cards');
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [campaignFilter, setCampaignFilter] = useState<CampaignType | 'All'>('All');
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
@@ -105,10 +105,6 @@ export default function LoyaltyHome() {
         item.member !== undefined,
     );
   const unreadCount = notices.filter((notice) => !notice.read).length;
-  const customerPoints = currentCustomerCards.reduce(
-    (sum, item) => sum + item.member.points,
-    0,
-  );
   const accountName =
     user?.firstName ??
     user?.primaryEmailAddress?.emailAddress.split('@')[0] ??
@@ -133,7 +129,7 @@ export default function LoyaltyHome() {
 
   function switchRole(nextRole: Role) {
     setRole(nextRole);
-    setTab(nextRole === 'customer' ? 'home' : 'overview');
+    setTab(nextRole === 'customer' ? 'cards' : 'overview');
   }
 
   function openNewCampaign(type: CampaignType = 'Promotion') {
@@ -281,8 +277,7 @@ export default function LoyaltyHome() {
   const navigation: { id: AppTab; title: string; icon: string }[] =
     role === 'customer'
       ? [
-          { id: 'home', title: 'Home', icon: 'home-outline' },
-          { id: 'cards', title: 'My cards', icon: 'albums-outline' },
+          { id: 'cards', title: 'My Cards', icon: 'albums-outline' },
           { id: 'discover', title: 'Discover', icon: 'compass-outline' },
         ]
       : [
@@ -325,12 +320,10 @@ export default function LoyaltyHome() {
           ? 'Your campaigns'
           : 'Loyalty members'
       : tab === 'cards'
-        ? 'Your stamp cards'
+        ? `Hello, ${accountName}!`
         : tab === 'discover'
           ? 'Find your next favorite'
-        : tab === 'updates'
-            ? 'A little good news'
-            : `Good morning, ${accountName}`;
+          : 'A little good news';
 
   return (
     <View
@@ -353,7 +346,7 @@ export default function LoyaltyHome() {
           {role === 'customer' && (
             <Pressable
               testID="notifications-button"
-              onPress={() => setTab(tab === 'updates' ? 'home' : 'updates')}
+              onPress={() => setTab(tab === 'updates' ? 'cards' : 'updates')}
               style={({ pressed }) => [
                 styles.iconButton,
                 { backgroundColor: colors.card, opacity: pressed ? 0.7 : 1 },
@@ -405,7 +398,14 @@ export default function LoyaltyHome() {
               : 'YOUR NEIGHBORHOOD, REWARDED'}
         </Text>
         <View style={styles.headingRow}>
-          <Text style={[styles.pageTitle, { color: colors.foreground }]}>{headerTitle}</Text>
+          <View style={styles.flexOne}>
+            <Text style={[styles.pageTitle, { color: colors.foreground }]}>{headerTitle}</Text>
+            {role === 'customer' && tab === 'cards' && (
+              <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground, marginTop: 4 }]}>
+                Your local rewards, all in one place.
+              </Text>
+            )}
+          </View>
           {role === 'merchant' && !!primaryBusiness && tab === 'manage' && (
             <Pressable
               testID="new-campaign"
@@ -456,7 +456,7 @@ export default function LoyaltyHome() {
         )}
 
         {role === 'customer' &&
-          (tab === 'home' || tab === 'cards' || tab === 'discover' || tab === 'updates') && (
+          (tab === 'cards' || tab === 'discover' || tab === 'updates') && (
             <CustomerContent
               tab={tab}
               colors={colors}
@@ -464,7 +464,6 @@ export default function LoyaltyHome() {
               cards={currentCustomerCards}
               favorites={favorites}
               notices={notices}
-              points={customerPoints}
               onFavorite={(id) => void toggleFavorite(id).catch((favoriteError) =>
                 Alert.alert('Favorite not updated', getLoyaltyErrorMessage(favoriteError)),
               )}
@@ -476,7 +475,6 @@ export default function LoyaltyHome() {
               )}
               onOpenCards={() => setTab('cards')}
               onOpenDiscover={() => setTab('discover')}
-              onOpenUpdates={() => setTab('updates')}
             />
           )}
 
@@ -657,7 +655,6 @@ function CustomerContent({
   cards,
   favorites,
   notices,
-  points,
   onFavorite,
   onRedeem,
   onRequestStamp,
@@ -665,7 +662,6 @@ function CustomerContent({
   onReadNotice,
   onOpenCards,
   onOpenDiscover,
-  onOpenUpdates,
 }: {
   tab: CustomerTab;
   colors: ReturnType<typeof useColors>;
@@ -673,7 +669,6 @@ function CustomerContent({
   cards: { business: Business; member: Member }[];
   favorites: string[];
   notices: ReturnType<typeof useLoyalty>['notices'];
-  points: number;
   onFavorite: (id: string) => void;
   onRedeem: (business: Business, member: Member) => void;
   onRequestStamp: (business: Business, member?: Member) => void;
@@ -681,9 +676,7 @@ function CustomerContent({
   onReadNotice: (id: string) => void;
   onOpenCards: () => void;
   onOpenDiscover: () => void;
-  onOpenUpdates: () => void;
 }) {
-  const isHome = tab === 'home';
   if (tab === 'updates') {
     return (
       <View style={styles.sectionStack}>
@@ -731,168 +724,206 @@ function CustomerContent({
   }
 
   if (tab === 'discover') {
+    const active = businesses.filter((business) => business.active);
+    const isJoined = (business: Business) =>
+      business.members.some((person) => person.isCurrentUser);
+    const seen = new Set<string>();
+    const recommendations = active
+      .filter((business) => !isJoined(business))
+      .filter((business) => (seen.has(business.id) ? false : (seen.add(business.id), true)))
+      .sort((x, y) => Number(favorites.includes(y.id)) - Number(favorites.includes(x.id)));
+    const joined = active.filter(isJoined);
     return (
       <View style={styles.sectionStack}>
         <Text style={[styles.sectionIntro, { color: colors.mutedForeground }]}>
           Good people, good places, a little something extra for coming back.
         </Text>
-        {businesses.filter(business => business.active).map((business) => (
-          <StoreCard
-            key={business.id}
-            business={business}
-            favorite={favorites.includes(business.id)}
-            member={business.members.find((person) => person.isCurrentUser)}
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>A place to try next</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+              Loyalty programs you have not joined yet
+            </Text>
+          </View>
+        </View>
+        {recommendations.length === 0 ? (
+          <EmptyState
+            icon="checkmark-done-outline"
+            title="You're all caught up!"
+            detail="You've discovered all participating businesses for now. Check back for new local spots!"
             colors={colors}
-            onFavorite={() => onFavorite(business.id)}
-            onJoin={() => onJoin(business)}
           />
-        ))}
+        ) : (
+          recommendations.map((business) => (
+            <StoreCard
+              key={business.id}
+              business={business}
+              favorite={favorites.includes(business.id)}
+              colors={colors}
+              onFavorite={() => onFavorite(business.id)}
+              onJoin={() => onJoin(business)}
+            />
+          ))
+        )}
+        {joined.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Already joined</Text>
+                <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
+                  Current promotions from your places
+                </Text>
+              </View>
+            </View>
+            {joined.map((business) => (
+              <StoreCard
+                key={business.id}
+                business={business}
+                favorite={favorites.includes(business.id)}
+                member={business.members.find((person) => person.isCurrentUser)}
+                colors={colors}
+                onFavorite={() => onFavorite(business.id)}
+                onJoin={() => onJoin(business)}
+              />
+            ))}
+          </>
+        )}
       </View>
     );
   }
 
-  if (tab === 'cards') {
+  const sortedCards = [...cards].sort(
+    (x, y) =>
+      Number(y.member.stamps >= y.business.goal) - Number(x.member.stamps >= x.business.goal),
+  );
+  if (sortedCards.length === 0) {
     return (
       <View style={styles.sectionStack}>
-        {cards.map(({ business, member }) => (
-          <StampCard
-            key={business.id}
-            business={business}
-            member={member}
-            colors={colors}
-            onRedeem={() => onRedeem(business, member)}
-            onRequestStamp={() => onRequestStamp(business, member)}
-          />
-        ))}
+        <EmptyState
+          icon="albums-outline"
+          title="Your rewards start here!"
+          detail="You haven't joined any loyalty programs yet. Discover local businesses and start earning rewards."
+          colors={colors}
+        />
         <Pressable
+          testID="discover-businesses"
           onPress={onOpenDiscover}
           style={({ pressed }) => [
-            styles.outlineAction,
-            { borderColor: colors.border, opacity: pressed ? 0.75 : 1 },
+            styles.primaryWideButton,
+            { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
           ]}
         >
-          <Ionicons name="add-circle-outline" size={19} color={colors.primary} />
-          <Text style={[styles.outlineActionText, { color: colors.primary }]}>
-            Find another neighborhood favorite
+          <Text style={[styles.primaryWideButtonText, { color: colors.primaryForeground }]}>
+            Discover Businesses
           </Text>
         </Pressable>
+        <PastActivity cards={cards} colors={colors} />
       </View>
     );
   }
-
-  const featured = cards[0];
-  const availableRewards = cards.filter(
-    ({ business, member }) => member.stamps >= business.goal,
-  );
   return (
     <View style={styles.sectionStack}>
-      <View style={[styles.pointsCard, { backgroundColor: colors.primary }]}>
-        <View style={styles.pointsTop}>
-          <View>
-            <Text style={styles.pointsEyebrow}>YOUR PERK POINTS</Text>
-            <Text style={styles.pointsNumber}>{currencyPoints(points)}</Text>
-          </View>
-          <View style={styles.pointsIcon}>
-            <Ionicons name="sparkles" size={22} color={colors.primary} />
-          </View>
-        </View>
-        <View style={styles.pointsDivider} />
-        <View style={styles.pointsBottom}>
-          <Text style={styles.pointsFootnote}>Every visit gets you closer.</Text>
-          <Pressable onPress={onOpenCards} style={styles.pointsLink}>
-            <Text style={styles.pointsLinkText}>View cards</Text>
-            <Ionicons name="arrow-forward" size={14} color={colors.accent} />
-          </Pressable>
-        </View>
-        <View style={[styles.orb, styles.orbOne]} />
-        <View style={[styles.orb, styles.orbTwo]} />
-      </View>
-
-      {availableRewards.length > 0 ? (
-        availableRewards.map(({ business, member }) => (
-          <Pressable
-            key={business.id}
-            onPress={() => onOpenUpdates()}
-            style={[styles.readyBanner, { backgroundColor: colors.accent }]}
-          >
-            <View style={styles.readyIcon}>
-              <Ionicons name="gift" size={19} color={colors.primary} />
-            </View>
-            <View style={styles.flexOne}>
-              <Text style={[styles.readyTitle, { color: colors.primary }]}>
-                A reward is ready
-              </Text>
-              <Text style={[styles.readyBody, { color: colors.primary }]}>
-                {business.name} · {member.stamps} stamps collected
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.primary} />
-          </Pressable>
-        ))
-      ) : (
-        <View style={[styles.nudgeBanner, { backgroundColor: colors.secondary }]}>
-          <View style={[styles.nudgeIcon, { backgroundColor: colors.card }]}>
-            <Ionicons name="heart-outline" size={19} color={colors.primary} />
-          </View>
-          <View style={styles.flexOne}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>
-              Your favorites are rooting for you
-            </Text>
-            <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>
-              One more visit, one more step toward something good.
-            </Text>
-          </View>
-        </View>
-      )}
-
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            {isHome ? 'Your next little win' : 'Your favorites'}
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
-            {isHome ? 'Pick up where you left off' : 'The places that know your order'}
-          </Text>
-        </View>
-        <Pressable onPress={onOpenCards} hitSlop={8}>
-          <Text style={[styles.linkText, { color: colors.primary }]}>See all</Text>
-        </Pressable>
-      </View>
-
-      {featured && (
+      {sortedCards.map(({ business, member }) => (
         <StampCard
-          business={featured.business}
-          member={featured.member}
+          key={business.id}
+          business={business}
+          member={member}
           colors={colors}
-          compact
-          onRedeem={() => onRedeem(featured.business, featured.member)}
-          onRequestStamp={() => onRequestStamp(featured.business, featured.member)}
+          onRedeem={() => onRedeem(business, member)}
+          onRequestStamp={() => onRequestStamp(business, member)}
         />
-      )}
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-            A place to try next
-          </Text>
-          <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>
-            A little more lovely, just around the corner
+      ))}
+      <Pressable
+        onPress={onOpenDiscover}
+        style={({ pressed }) => [
+          styles.outlineAction,
+          { borderColor: colors.border, opacity: pressed ? 0.75 : 1 },
+        ]}
+      >
+        <Ionicons name="add-circle-outline" size={19} color={colors.primary} />
+        <Text style={[styles.outlineActionText, { color: colors.primary }]}>
+          Find another neighborhood favorite
+        </Text>
+      </Pressable>
+      <PastActivity cards={cards} colors={colors} />
+    </View>
+  );
+}
+
+function PastActivity({
+  cards,
+  colors,
+}: {
+  cards: { business: Business; member: Member }[];
+  colors: ReturnType<typeof useColors>;
+}) {
+  const [open, setOpen] = useState(false);
+  const items = useMemo(
+    () =>
+      cards
+        .flatMap(({ business }) =>
+          (business.history ?? []).map((item) => ({ item, businessName: business.name })),
+        )
+        .sort((x, y) => Date.parse(y.item.createdAt) - Date.parse(x.item.createdAt)),
+    [cards],
+  );
+  return (
+    <View style={[styles.storeCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      <Pressable
+        testID="past-activity-toggle"
+        onPress={() => setOpen((value) => !value)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        style={[styles.storeCardHeader, { alignItems: 'center' }]}
+      >
+        <View style={[styles.storeMark, { backgroundColor: colors.secondary }]}>
+          <Ionicons name="time-outline" size={20} color={colors.primary} />
+        </View>
+        <View style={styles.flexOne}>
+          <Text style={[styles.cardTitle, { color: colors.foreground }]}>Past Activity</Text>
+          <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+            {items.length} {items.length === 1 ? 'entry' : 'entries'}
           </Text>
         </View>
-      </View>
-      {businesses
-        .filter((business) => !favorites.includes(business.id))
-        .slice(0, 1)
-        .map((business) => (
-          <StoreCard
-            key={business.id}
-            business={business}
-            favorite={false}
-            member={business.members.find((person) => person.isCurrentUser)}
-            colors={colors}
-            onFavorite={() => onFavorite(business.id)}
-            onJoin={() => onJoin(business)}
-          />
-        ))}
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={20} color={colors.mutedForeground} />
+      </Pressable>
+      {open && (
+        <View style={{ gap: 10 }}>
+          {items.length === 0 ? (
+            <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>
+              No activity yet. Your approved visits and redeemed rewards will show up here.
+            </Text>
+          ) : (
+            items.map(({ item, businessName }) => {
+              const isStamp = item.type === 'stamp';
+              const bonus = isStamp ? Math.max(item.stamps - 1, 0) : 0;
+              return (
+                <View
+                  key={item.id}
+                  style={{ flexDirection: 'row', gap: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border }}
+                >
+                  <Ionicons
+                    name={isStamp ? 'add-circle-outline' : 'gift-outline'}
+                    size={18}
+                    color={colors.primary}
+                  />
+                  <View style={styles.flexOne}>
+                    <Text style={[styles.rewardName, { color: colors.foreground }]}>{businessName}</Text>
+                    <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                      {isStamp
+                        ? `${item.stamps} ${item.stamps === 1 ? 'stamp' : 'stamps'} earned${bonus > 0 ? ` · includes ${bonus} bonus` : ''}`
+                        : `Reward redeemed · ${item.description}`}
+                    </Text>
+                  </View>
+                  <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </Text>
+                </View>
+              );
+            })
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -931,7 +962,7 @@ function StampCard({
             {business.name}
           </Text>
           <Text style={[styles.caption, { color: colors.mutedForeground }]}>
-            {business.category}
+            {business.programName}
           </Text>
         </View>
         <View style={[styles.stampCount, { backgroundColor: colors.secondary }]}>
@@ -975,7 +1006,7 @@ function StampCard({
           </Text>
           <Text style={[styles.caption, { color: colors.mutedForeground }]}>
             {complete
-              ? `${business.rewardDescription} · ${Math.max(member.stamps - business.goal, 0)} extra stamps saved`
+              ? `${business.rewardDescription} · 0 stamps remaining · ${Math.max(member.stamps - business.goal, 0)} extra stamps saved`
               : `${pointsLeft} more ${pointsLeft === 1 ? 'stamp' : 'stamps'} to go · ${business.rewardDescription}`}
           </Text>
         </View>
@@ -1007,13 +1038,6 @@ function StampCard({
       </View>
       {!compact && (
         <View style={{ gap: 6 }}>
-          <Text style={[styles.rewardName, { color: colors.foreground }]}>Your recent activity</Text>
-          {(business.history ?? []).length === 0 && <Text style={[styles.caption, { color: colors.mutedForeground }]}>Your approved visits and redemptions will appear here.</Text>}
-          {(business.history ?? []).slice(0, 10).map(item => (
-            <Text key={item.id} style={[styles.caption, { color: colors.mutedForeground }]}>
-              {item.type === 'stamp' ? '+' : '−'}{item.stamps} · {item.description} · {new Date(item.createdAt).toLocaleDateString()}
-            </Text>
-          ))}
           {!!business.terms && <Text style={[styles.caption, { color: colors.mutedForeground }]}>{business.terms}</Text>}
         </View>
       )}
@@ -1093,6 +1117,11 @@ function StoreCard({
           <Text style={[styles.offerText, { color: colors.foreground }]} numberOfLines={2}>
             {offer.title}
           </Text>
+        </View>
+      )}
+      {member && (
+        <View style={[styles.demoPill, { backgroundColor: colors.accent, alignSelf: 'flex-start' }]}>
+          <Text style={[styles.demoPillText, { color: colors.primary }]}>JOINED</Text>
         </View>
       )}
       {!member && (

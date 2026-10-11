@@ -20,3 +20,9 @@ Staff approval codes must be app-generated, exactly four digits, change every th
 **Why:** The user explicitly requested these security and usability rules.
 
 **How to apply:** Owner-only disclosure is separate from customer snapshots; expired codes must fail server-side even if the app has been closed.
+
+Keep the customer experience centered on My Cards and Discover, without a separate Home page or customer perk-point display. Preserve merchant navigation and the merchant retention dashboard when reorganizing customer pages.
+
+**Why:** The user explicitly limited this simplification to customer navigation and page organization.
+
+**How to apply:** Reuse existing cards, transaction history, promotions, and approval flows rather than inventing replacement loyalty logic.
