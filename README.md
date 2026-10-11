@@ -1,18 +1,19 @@
 # LoyaltyHub
 
 ## Your Neighborhood Rewarded
-A digital loyalty and promotions platform built to help small businesses increase customer retention and turn first-time visitors into regulars.
-LoyaltyHub brings traditional punch cards into th digital age, giving independent businesses an accessibe way to reward loyal customers, manage promotions, and understand customer engagement without the developing their own app.
+A digital loyalty and promotions platform that helps small businesses increase customer retention and turn first-time visitors into regulars.
+LoyaltyHub brings traditional punch cards into the digital age, giving independent businesses an accessible way to reward loyal customers, manage promotions, and understand customer engagement without developing their own app.
 
 ## Built for Hacklanta 2026| Social Good and Replit Small Business Sponsor Challenge
 
 ## The Problem
-Small businesses thrive on loyal customers but lack the time, financial resources, or technical infrastructure to create their own loyalty applications.
-Traditional paper punch cards are affordable and familiar, but they come with limitation:
+Small businesses thrive on loyal customers but often lack the time, financial resources, or technical infrastructure to build their own loyalty apps.
+Traditional paper punch cards are affordable and familiar, but they come with limitations:
   - Customers can lose or forget their cards.
   - Businesses have limited insights into returning customers.
   - Managing promotions and tracking loyalty activity can be difficult.
-  - Existing digital loyalty solutions may require additional  subscriptions, hardware, or point-of-sale integrations.
+  - Existing digital loyalty solutions may require additional subscriptions, hardware, or point-of-sale integrations.
+We wanted to create a solution that maintains the simplicity of a traditional punch card while offering the benefits of a modern loyalty platform.
 We wanted to create a solution that maintains the simplicity pf a traditional punch card while offering the benefits of a modern loyalty platform.
 
 ## The Solution
