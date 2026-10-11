@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql, or } from "drizzle-orm";
 import type {
   Business as ApiBusiness,
   Campaign as ApiCampaign,
@@ -37,6 +37,11 @@ function lastSevenUtcDays(now: Date) {
 
 export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapshot> {
   const now = new Date();
+  // Joined cards remain in the wallet even when the owner pauses a program.
+  const joinedRows = await db.select({ business: loyaltyBusinesses })
+    .from(loyaltyBusinesses)
+    .innerJoin(loyaltyMemberships, eq(loyaltyMemberships.businessId, loyaltyBusinesses.id))
+    .where(eq(loyaltyMemberships.userId, userId));
   const [ownedRows, publicRows, favoriteRows, noticeRows] = await Promise.all([
     db
       .select()
@@ -59,7 +64,7 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
   ]);
 
   const businessMap = new Map(
-    [...publicRows, ...ownedRows].map((business) => [business.id, business]),
+    [...publicRows, ...ownedRows, ...joinedRows.map(row => row.business)].map((business) => [business.id, business]),
   );
   const businesses = [...businessMap.values()].sort((left, right) =>
     left.name.localeCompare(right.name),
@@ -69,6 +74,15 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
   }
 
   const businessIds = businesses.map((business) => business.id);
+  const customerHistory = await db.select({
+    id: loyaltyTransactions.id, businessId: loyaltyTransactions.businessId,
+    memberName: loyaltyMemberships.displayName, type: loyaltyTransactions.type,
+    stamps: loyaltyTransactions.stampDelta, description: loyaltyTransactions.description,
+    createdAt: loyaltyTransactions.createdAt,
+  }).from(loyaltyTransactions)
+    .innerJoin(loyaltyMemberships, eq(loyaltyMemberships.id, loyaltyTransactions.membershipId))
+    .where(eq(loyaltyMemberships.userId, userId))
+    .orderBy(desc(loyaltyTransactions.createdAt)).limit(100);
   const [
     membershipRows,
     campaignRows,
@@ -224,6 +238,9 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
     recentByBusiness.set(business.id, recentTransactions);
 
     analyticsByBusiness.set(business.id, {
+      approvedVisits: summaryRows.reduce((sum, row) => sum + (row?.visits ?? 0), 0),
+      rewardsAvailable: businessMembers.reduce((sum, member) => sum + Math.floor(member.stampBalance / business.goal), 0),
+      activePromotions: businessCampaigns.filter(campaign => campaign.type === "Promotion" && isCampaignInWindow(campaign, now)).length,
       members: businessMembers.length,
       stamps: totals[0]?.stamps ?? 0,
       redemptions: totals[0]?.redemptions ?? 0,
@@ -280,11 +297,16 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
       endAt: campaign.endAt?.toISOString() ?? null,
       multiplier: campaign.multiplier,
       bonusStamps: campaign.bonusStamps,
-      usageCount: campaignUsageMap.get(campaign.id) ?? 0,
+      usageCount: isOwner ? campaignUsageMap.get(campaign.id) ?? 0 : 0,
     }));
 
     return {
       id: business.id,
+      logoUrl: business.logoUrl,
+      history: customerHistory.filter(row => row.businessId === business.id).map(row => ({
+        id: row.id, memberName: row.memberName, type: row.type as "stamp" | "redemption",
+        stamps: Math.abs(row.stamps), description: row.description, createdAt: row.createdAt.toISOString(),
+      })),
       name: business.name,
       category: business.category,
       location: business.location,

@@ -21,13 +21,13 @@ export function MerchantActivityChart({ activity }: { activity: ActivityDay[] })
             Visits this week
           </Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
-            Customer-approved stamps · last 7 days
+          Staff-approved visits · last 7 days
           </Text>
         </View>
       </View>
       <View style={styles.plot}>
         {activity.map((day) => {
-          const barHeight = day.visits === 0 ? 4 : Math.max(9, (day.visits / maximum) * 83);
+          const barHeight = (day.visits / maximum) * 83;
           const date = new Date(`${day.date}T12:00:00Z`);
           return (
             <View
@@ -66,6 +66,6 @@ const styles = StyleSheet.create({
   plot: { minHeight: 122, flexDirection: "row", alignItems: "flex-end", gap: 8, paddingTop: 10 },
   dayColumn: { flex: 1, minWidth: 0, alignItems: "center", justifyContent: "flex-end", gap: 6 },
   value: { height: 14, fontSize: 10, fontFamily: "Inter_500Medium" },
-  bar: { width: "72%", minHeight: 4, borderRadius: 8 },
+  bar: { width: "72%", borderRadius: 8 },
   dayLabel: { fontSize: 10, fontFamily: "Inter_500Medium" },
 });

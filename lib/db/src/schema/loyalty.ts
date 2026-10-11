@@ -17,6 +17,7 @@ export const loyaltyBusinesses = pgTable(
     id: text("id").primaryKey(),
     ownerUserId: text("owner_user_id").notNull(),
     name: text("name").notNull(),
+    logoUrl: text("logo_url").notNull().default(""),
     category: text("category").notNull(),
     location: text("location").notNull(),
     description: text("description").notNull().default(""),

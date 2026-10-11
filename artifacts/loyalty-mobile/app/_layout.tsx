@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -31,17 +31,17 @@ if (domain) setBaseUrl(`https://${domain}`);
 
 function RootLayoutNav() {
   const { isLoaded, isSignedIn, userId, getToken } = useAuth();
+  const [apiAuthReady, setApiAuthReady] = useState(false);
 
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      setAuthTokenGetter(null);
-      return;
-    }
+    // Expo web and the API use separate preview origins, so cookies alone
+    // cannot authenticate the cross-origin API request.
     setAuthTokenGetter(isSignedIn ? () => getToken() : null);
+    setApiAuthReady(true);
     return () => setAuthTokenGetter(null);
   }, [getToken, isSignedIn]);
 
-  if (!isLoaded) return null;
+  if (!isLoaded || !apiAuthReady) return null;
 
   const appRoutes = (
     <Stack screenOptions={{ headerBackTitle: 'Back' }}>

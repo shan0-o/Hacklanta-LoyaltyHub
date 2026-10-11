@@ -1,1 +1,3 @@
 - [Expo Router auth routes](expo-router-auth-routes.md) — route groups are URL-transparent; avoid duplicate group `index` screens and register auth leaf routes explicitly.
+- [Loyalty product boundaries](loyalty-product-boundaries.md) — customer-initiated staff approval; no QR/POS/receipt workflows; clearly identified persistent demo data.
+- [Expo Clerk test login](expo-clerk-testing.md) — use fresh single-use login tasks on the intended preview origin; report the actual tested host.

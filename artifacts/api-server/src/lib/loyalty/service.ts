@@ -33,6 +33,7 @@ export async function createBusiness(
       id,
       ownerUserId,
       name: input.name.trim(),
+      logoUrl: input.logoUrl ?? "",
       category: input.category.trim(),
       location: input.location.trim(),
       description: input.description.trim(),
@@ -71,6 +72,7 @@ export async function updateBusiness(
   if (!business) return null;
 
   const updates: Partial<typeof loyaltyBusinesses.$inferInsert> = {};
+  if (input.logoUrl !== undefined) updates.logoUrl = input.logoUrl;
   if (input.name !== undefined) updates.name = input.name.trim();
   if (input.category !== undefined) updates.category = input.category.trim();
   if (input.location !== undefined) updates.location = input.location.trim();

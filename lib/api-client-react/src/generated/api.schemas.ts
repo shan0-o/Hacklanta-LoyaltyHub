@@ -74,6 +74,9 @@ export interface RecentTransaction {
 }
 
 export interface MerchantAnalytics {
+  approvedVisits?: number;
+  rewardsAvailable?: number;
+  activePromotions?: number;
   members: number;
   stamps: number;
   redemptions: number;
@@ -85,6 +88,8 @@ export interface MerchantAnalytics {
 }
 
 export interface Business {
+  logoUrl?: string;
+  history?: RecentTransaction[];
   id: string;
   name: string;
   category: string;
@@ -131,6 +136,8 @@ export interface DemoSeedInput {
 }
 
 export interface BusinessInput {
+  /** @maxLength 2048 */
+  logoUrl?: string;
   /**
      * @minLength 2
      * @maxLength 80
@@ -170,6 +177,8 @@ export interface BusinessInput {
 }
 
 export interface BusinessUpdate {
+  /** @maxLength 2048 */
+  logoUrl?: string;
   /**
      * @minLength 2
      * @maxLength 80

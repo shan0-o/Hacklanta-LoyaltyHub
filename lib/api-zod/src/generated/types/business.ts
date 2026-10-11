@@ -8,8 +8,11 @@
 import type { Campaign } from './campaign';
 import type { Member } from './member';
 import type { MerchantAnalytics } from './merchantAnalytics';
+import type { RecentTransaction } from './recentTransaction';
 
 export interface Business {
+  logoUrl?: string;
+  history?: RecentTransaction[];
   id: string;
   name: string;
   category: string;

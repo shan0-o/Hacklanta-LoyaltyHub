@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Modal,
   Platform,
   Pressable,
@@ -46,6 +47,7 @@ export function LoyaltyActionModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [requestKey] = useState(() => Crypto.randomUUID());
+  const punchScale = useRef(new Animated.Value(1)).current;
   const isStamp = mode === "stamp";
 
   function close() {
@@ -64,6 +66,10 @@ export function LoyaltyActionModal({
       const result = await onConfirm(pin, requestKey);
       setSuccess(result.message);
       setPin("");
+      Animated.sequence([
+        Animated.timing(punchScale, { toValue: 1.2, duration: 140, useNativeDriver: true }),
+        Animated.spring(punchScale, { toValue: 1, useNativeDriver: true }),
+      ]).start();
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (submitError) {
       setError(getLoyaltyErrorMessage(submitError));
@@ -112,9 +118,10 @@ export function LoyaltyActionModal({
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
         >
-          <View
+          <Animated.View
             style={[
               styles.actionIcon,
+              { transform: [{ scale: punchScale }] },
               { backgroundColor: success ? colors.accent : colors.secondary },
             ]}
           >
@@ -123,7 +130,7 @@ export function LoyaltyActionModal({
               size={26}
               color={colors.primary}
             />
-          </View>
+          </Animated.View>
           <Text style={[styles.title, { color: colors.foreground }]}>
             {success
               ? isStamp
@@ -140,6 +147,11 @@ export function LoyaltyActionModal({
                 ? `${expectedStamps} stamp${expectedStamps === 1 ? "" : "s"} will be added after staff approval.`
                 : `This will use ${business?.goal ?? 0} stamps. Any stamps above the reward threshold stay on your card.`}
           </Text>
+          {!!success && (
+            <Text style={[styles.description, { color: colors.foreground }]}>
+              {business?.name}{!isStamp ? ` · ${business?.rewardDescription}` : ''}
+            </Text>
+          )}
 
           {!!promotion && !success && (
             <View

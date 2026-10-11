@@ -9,6 +9,9 @@ import type { ActivityDay } from './activityDay';
 import type { RecentTransaction } from './recentTransaction';
 
 export interface MerchantAnalytics {
+  approvedVisits?: number;
+  rewardsAvailable?: number;
+  activePromotions?: number;
   members: number;
   stamps: number;
   redemptions: number;

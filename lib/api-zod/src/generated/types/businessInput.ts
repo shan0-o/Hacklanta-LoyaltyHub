@@ -7,6 +7,8 @@
  */
 
 export interface BusinessInput {
+  /** @maxLength 2048 */
+  logoUrl?: string;
   /**
      * @minLength 2
      * @maxLength 80

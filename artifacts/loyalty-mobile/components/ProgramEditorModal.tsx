@@ -11,7 +11,8 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { Business, BusinessInput, BusinessUpdate } from "@/context/LoyaltyContext";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
+import type { Business, BusinessInput } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 
 type ProgramFields = Omit<BusinessInput, "staffPin"> & { staffPin?: string };
@@ -29,6 +30,7 @@ export function ProgramEditorModal({
 }) {
   const colors = useColors();
   const [name, setName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
@@ -44,6 +46,7 @@ export function ProgramEditorModal({
   useEffect(() => {
     if (!visible) return;
     setName(business?.name ?? "");
+    setLogoUrl(business?.logoUrl ?? "");
     setCategory(business?.category ?? "");
     setLocation(business?.location ?? "");
     setDescription(business?.description ?? "");
@@ -88,6 +91,7 @@ export function ProgramEditorModal({
     setError("");
     try {
       const fields = {
+        logoUrl: logoUrl.trim(),
         name: name.trim(),
         category: category.trim(),
         location: location.trim(),
@@ -144,7 +148,7 @@ export function ProgramEditorModal({
           </Text>
           <View style={styles.iconButton} />
         </View>
-        <ScrollView
+        <KeyboardAwareScrollViewCompat
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -157,6 +161,7 @@ export function ProgramEditorModal({
           </Text>
 
           <Field label="BUSINESS NAME" value={name} onChange={setName} placeholder="e.g. Daybreak Coffee" style={fieldStyle} />
+          <Field label="LOGO IMAGE URL (OPTIONAL)" value={logoUrl} onChange={setLogoUrl} placeholder="https://…/logo.png" style={fieldStyle} />
           <View style={styles.row}>
             <Field label="CATEGORY" value={category} onChange={setCategory} placeholder="Coffee shop" style={[fieldStyle, styles.halfInput]} />
             <Field label="LOCATION" value={location} onChange={setLocation} placeholder="Brooklyn, NY" style={[fieldStyle, styles.halfInput]} />
@@ -168,6 +173,9 @@ export function ProgramEditorModal({
             <Field label="REWARD" value={rewardDescription} onChange={setRewardDescription} placeholder="One coffee on us" style={[fieldStyle, styles.halfInput]} />
           </View>
           <Field label="PROGRAM TERMS" value={terms} onChange={setTerms} placeholder="One approved stamp per visit." style={fieldStyle} multiline />
+          <Text style={[styles.pinHelp, { color: colors.mutedForeground }]}>
+            Changing the reward threshold preserves all stamp balances. Eligibility uses the current threshold.
+          </Text>
 
           <View style={[styles.pinCard, { backgroundColor: colors.secondary }]}>
             <View style={styles.pinTitleRow}>
@@ -225,7 +233,7 @@ export function ProgramEditorModal({
               </>
             )}
           </Pressable>
-        </ScrollView>
+        </KeyboardAwareScrollViewCompat>
       </View>
     </Modal>
   );

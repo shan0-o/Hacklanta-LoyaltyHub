@@ -63,8 +63,14 @@ function pin(value: unknown): value is string {
   return typeof value === "string" && /^[0-9]{4,8}$/.test(value);
 }
 
+function validLogo(value: unknown): boolean {
+  if (value === undefined || value === "") return true;
+  if (typeof value !== "string" || value.length > 2048) return false;
+  try { return new URL(value).protocol === "https:"; } catch { return false; }
+}
+
 function parseBusinessInput(value: unknown): BusinessInput | null {
-  if (!isRecord(value)) return null;
+  if (!isRecord(value) || !validLogo(value.logoUrl)) return null;
   if (
     !text(value.name, 2, 80) ||
     !text(value.category, 2, 40) ||
@@ -83,6 +89,7 @@ function parseBusinessInput(value: unknown): BusinessInput | null {
     return null;
   }
   return {
+    logoUrl: value.logoUrl as string | undefined,
     name: value.name,
     category: value.category,
     location: value.location,
@@ -96,9 +103,13 @@ function parseBusinessInput(value: unknown): BusinessInput | null {
 }
 
 function parseBusinessUpdate(value: unknown): BusinessUpdate | null {
-  if (!isRecord(value)) return null;
+  if (!isRecord(value) || !validLogo(value.logoUrl)) return null;
   const parsed: BusinessUpdate = {};
   let fields = 0;
+  if (value.logoUrl !== undefined) {
+    parsed.logoUrl = value.logoUrl as string;
+    fields++;
+  }
   const stringRules = [
     ["name", 2, 80],
     ["category", 2, 40],

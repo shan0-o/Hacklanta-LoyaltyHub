@@ -22,6 +22,15 @@ export const HealthCheckResponse = zod.object({
  */
 export const GetLoyaltySnapshotResponse = zod.object({
   "businesses": zod.array(zod.object({
+  "logoUrl": zod.string().optional(),
+  "history": zod.array(zod.object({
+  "id": zod.string(),
+  "memberName": zod.string(),
+  "type": zod.enum(['stamp', 'redemption']),
+  "stamps": zod.number().int(),
+  "description": zod.string(),
+  "createdAt": zod.string()
+})).optional(),
   "id": zod.string(),
   "name": zod.string(),
   "category": zod.string(),
@@ -58,6 +67,9 @@ export const GetLoyaltySnapshotResponse = zod.object({
   "usageCount": zod.number().int()
 })),
   "analytics": zod.union([zod.object({
+  "approvedVisits": zod.number().int().optional(),
+  "rewardsAvailable": zod.number().int().optional(),
+  "activePromotions": zod.number().int().optional(),
   "members": zod.number().int(),
   "stamps": zod.number().int(),
   "redemptions": zod.number().int(),
@@ -110,6 +122,8 @@ export const SeedDemoBusinessesResponse = zod.object({
 /**
  * @summary Create a business and loyalty program owned by the signed-in user
  */
+export const createBusinessBodyLogoUrlMax = 2048;
+
 export const createBusinessBodyNameMin = 2;
 export const createBusinessBodyNameMax = 80;
 
@@ -136,6 +150,7 @@ export const createBusinessBodyStaffPinRegExp = new RegExp('^[0-9]{4,8}$');
 
 
 export const CreateBusinessBody = zod.object({
+  "logoUrl": zod.string().max(createBusinessBodyLogoUrlMax).optional(),
   "name": zod.string().min(createBusinessBodyNameMin).max(createBusinessBodyNameMax),
   "category": zod.string().min(createBusinessBodyCategoryMin).max(createBusinessBodyCategoryMax),
   "location": zod.string().min(createBusinessBodyLocationMin).max(createBusinessBodyLocationMax),
@@ -148,6 +163,15 @@ export const CreateBusinessBody = zod.object({
 })
 
 export const CreateBusinessResponse = zod.object({
+  "logoUrl": zod.string().optional(),
+  "history": zod.array(zod.object({
+  "id": zod.string(),
+  "memberName": zod.string(),
+  "type": zod.enum(['stamp', 'redemption']),
+  "stamps": zod.number().int(),
+  "description": zod.string(),
+  "createdAt": zod.string()
+})).optional(),
   "id": zod.string(),
   "name": zod.string(),
   "category": zod.string(),
@@ -184,6 +208,9 @@ export const CreateBusinessResponse = zod.object({
   "usageCount": zod.number().int()
 })),
   "analytics": zod.union([zod.object({
+  "approvedVisits": zod.number().int().optional(),
+  "rewardsAvailable": zod.number().int().optional(),
+  "activePromotions": zod.number().int().optional(),
   "members": zod.number().int(),
   "stamps": zod.number().int(),
   "redemptions": zod.number().int(),
@@ -214,6 +241,8 @@ export const UpdateBusinessParams = zod.object({
   "businessId": zod.coerce.string()
 })
 
+export const updateBusinessBodyLogoUrlMax = 2048;
+
 export const updateBusinessBodyNameMin = 2;
 export const updateBusinessBodyNameMax = 80;
 
@@ -240,6 +269,7 @@ export const updateBusinessBodyStaffPinRegExp = new RegExp('^[0-9]{4,8}$');
 
 
 export const UpdateBusinessBody = zod.object({
+  "logoUrl": zod.string().max(updateBusinessBodyLogoUrlMax).optional(),
   "name": zod.string().min(updateBusinessBodyNameMin).max(updateBusinessBodyNameMax).optional(),
   "category": zod.string().min(updateBusinessBodyCategoryMin).max(updateBusinessBodyCategoryMax).optional(),
   "location": zod.string().min(updateBusinessBodyLocationMin).max(updateBusinessBodyLocationMax).optional(),
@@ -253,6 +283,15 @@ export const UpdateBusinessBody = zod.object({
 })
 
 export const UpdateBusinessResponse = zod.object({
+  "logoUrl": zod.string().optional(),
+  "history": zod.array(zod.object({
+  "id": zod.string(),
+  "memberName": zod.string(),
+  "type": zod.enum(['stamp', 'redemption']),
+  "stamps": zod.number().int(),
+  "description": zod.string(),
+  "createdAt": zod.string()
+})).optional(),
   "id": zod.string(),
   "name": zod.string(),
   "category": zod.string(),
@@ -289,6 +328,9 @@ export const UpdateBusinessResponse = zod.object({
   "usageCount": zod.number().int()
 })),
   "analytics": zod.union([zod.object({
+  "approvedVisits": zod.number().int().optional(),
+  "rewardsAvailable": zod.number().int().optional(),
+  "activePromotions": zod.number().int().optional(),
   "members": zod.number().int(),
   "stamps": zod.number().int(),
   "redemptions": zod.number().int(),
@@ -328,6 +370,15 @@ export const JoinBusinessBody = zod.object({
 })
 
 export const JoinBusinessResponse = zod.object({
+  "logoUrl": zod.string().optional(),
+  "history": zod.array(zod.object({
+  "id": zod.string(),
+  "memberName": zod.string(),
+  "type": zod.enum(['stamp', 'redemption']),
+  "stamps": zod.number().int(),
+  "description": zod.string(),
+  "createdAt": zod.string()
+})).optional(),
   "id": zod.string(),
   "name": zod.string(),
   "category": zod.string(),
@@ -364,6 +415,9 @@ export const JoinBusinessResponse = zod.object({
   "usageCount": zod.number().int()
 })),
   "analytics": zod.union([zod.object({
+  "approvedVisits": zod.number().int().optional(),
+  "rewardsAvailable": zod.number().int().optional(),
+  "activePromotions": zod.number().int().optional(),
   "members": zod.number().int(),
   "stamps": zod.number().int(),
   "redemptions": zod.number().int(),

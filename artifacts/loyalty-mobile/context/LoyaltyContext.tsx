@@ -109,10 +109,10 @@ export function LoyaltyProvider({
     mutation: { onSuccess: invalidateSnapshot },
   });
   const createBusinessMutation = useCreateBusiness({
-    mutation: { onSuccess: invalidateSnapshot },
+    mutation: { onSuccess: invalidateSnapshot, gcTime: 0 },
   });
   const updateBusinessMutation = useUpdateBusiness({
-    mutation: { onSuccess: invalidateSnapshot },
+    mutation: { onSuccess: invalidateSnapshot, gcTime: 0 },
   });
   const createCampaignMutation = useCreateCampaign({
     mutation: { onSuccess: invalidateSnapshot },
@@ -130,10 +130,10 @@ export function LoyaltyProvider({
     mutation: { onSuccess: invalidateSnapshot },
   });
   const stampMutation = useRequestStamp({
-    mutation: { onSuccess: invalidateSnapshot },
+    mutation: { onSuccess: invalidateSnapshot, gcTime: 0 },
   });
   const redemptionMutation = useRedeemReward({
-    mutation: { onSuccess: invalidateSnapshot },
+    mutation: { onSuccess: invalidateSnapshot, gcTime: 0 },
   });
   const noticeMutation = useMarkNoticeRead({
     mutation: { onSuccess: invalidateSnapshot },
@@ -152,12 +152,12 @@ export function LoyaltyProvider({
   );
   const createBusiness = useCallback(
     async (input: BusinessInput) =>
-      createBusinessMutation.mutateAsync({ data: input }),
+      createBusinessMutation.mutateAsync({ data: input }).finally(() => createBusinessMutation.reset()),
     [createBusinessMutation],
   );
   const updateBusiness = useCallback(
     async (businessId: string, input: BusinessUpdate) =>
-      updateBusinessMutation.mutateAsync({ businessId, data: input }),
+      updateBusinessMutation.mutateAsync({ businessId, data: input }).finally(() => updateBusinessMutation.reset()),
     [updateBusinessMutation],
   );
   const joinBusiness = useCallback(
@@ -236,7 +236,7 @@ export function LoyaltyProvider({
       stampMutation.mutateAsync({
         businessId,
         data: { staffPin, idempotencyKey },
-      }),
+      }).finally(() => stampMutation.reset()),
     [stampMutation],
   );
   const redeemReward = useCallback(
@@ -244,7 +244,7 @@ export function LoyaltyProvider({
       redemptionMutation.mutateAsync({
         businessId,
         data: { staffPin, idempotencyKey },
-      }),
+      }).finally(() => redemptionMutation.reset()),
     [redemptionMutation],
   );
   const markNoticeRead = useCallback(

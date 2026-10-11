@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   Alert,
   ActivityIndicator,
+  Image,
   Modal,
   Platform,
   Pressable,
@@ -87,6 +88,7 @@ export default function LoyaltyHome() {
   const [campaignEndDate, setCampaignEndDate] = useState('');
   const [campaignBoost, setCampaignBoost] = useState<'standard' | 'double' | 'bonus'>('standard');
   const [campaignError, setCampaignError] = useState('');
+  const [campaignSaving, setCampaignSaving] = useState(false);
 
   const ownedBusinesses = businesses.filter((business) => business.isOwner);
   const primaryBusiness =
@@ -170,10 +172,11 @@ export default function LoyaltyHome() {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) return undefined;
     const suffix = endOfDay ? 'T23:59:59.999Z' : 'T00:00:00.000Z';
     const date = new Date(`${value.trim()}${suffix}`);
-    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+    return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value.trim() ? undefined : date.toISOString();
   }
 
   async function submitCampaign() {
+    if (campaignSaving) return;
     if (!campaignTitle.trim()) {
       setCampaignError('Add a name for this campaign.');
       return;
@@ -190,6 +193,7 @@ export default function LoyaltyHome() {
     }
     const multiplier = campaignType === 'Promotion' && campaignBoost === 'double' ? 2 : 1;
     const bonusStamps = campaignType === 'Promotion' && campaignBoost === 'bonus' ? 1 : 0;
+    setCampaignSaving(true);
     try {
       await saveCampaign(primaryBusiness!.id, {
         id: editingCampaign?.id,
@@ -205,6 +209,8 @@ export default function LoyaltyHome() {
       setShowCampaignForm(false);
     } catch (submitError) {
       setCampaignError(getLoyaltyErrorMessage(submitError));
+    } finally {
+      setCampaignSaving(false);
     }
   }
 
@@ -510,6 +516,9 @@ export default function LoyaltyHome() {
             onManage={() => setTab('manage')}
             onMembers={() => setTab('members')}
             onEditProgram={() => setShowProgramForm(true)}
+            onToggleProgram={() => void updateBusiness(primaryBusiness.id, { active: !primaryBusiness.active }).catch(err =>
+              Alert.alert('Program not updated', getLoyaltyErrorMessage(err)),
+            )}
           />
         )}
         {role === 'merchant' && primaryBusiness && tab === 'manage' && (
@@ -580,6 +589,7 @@ export default function LoyaltyHome() {
         type={campaignType}
         active={campaignActive}
         error={campaignError}
+        saving={campaignSaving}
         editing={!!editingCampaign}
         colors={colors}
         onClose={() => setShowCampaignForm(false)}
@@ -595,12 +605,12 @@ export default function LoyaltyHome() {
         onChangePromotionBoost={setCampaignBoost}
         onSubmit={submitCampaign}
       />
-      <ProgramEditorModal
+      {showProgramForm && <ProgramEditorModal
         visible={showProgramForm}
         business={primaryBusiness ?? null}
         onClose={() => setShowProgramForm(false)}
         onSave={handleProgramSave}
-      />
+      />}
       <LoyaltyActionModal
         key={actionRequest?.key ?? 'closed-loyalty-action'}
         visible={!!actionRequest}
@@ -728,7 +738,7 @@ function CustomerContent({
         <Text style={[styles.sectionIntro, { color: colors.mutedForeground }]}>
           Good people, good places, a little something extra for coming back.
         </Text>
-        {businesses.map((business) => (
+        {businesses.filter(business => business.active).map((business) => (
           <StoreCard
             key={business.id}
             business={business}
@@ -916,7 +926,7 @@ function StampCard({
     >
       <View style={styles.storeCardHeader}>
         <View style={[styles.storeMark, { backgroundColor: colors.secondary }]}>
-          <Ionicons name="cafe-outline" size={20} color={colors.primary} />
+          {business.logoUrl ? <Image source={{ uri: business.logoUrl }} style={{ width: 36, height: 36, borderRadius: 10 }} /> : <Ionicons name="cafe-outline" size={20} color={colors.primary} />}
         </View>
         <View style={styles.flexOne}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>
@@ -932,6 +942,11 @@ function StampCard({
           </Text>
         </View>
       </View>
+      {activePromotionDescription(business) && (
+        <Text style={[styles.bodyText, { color: colors.primary }]}>{activePromotionDescription(business)}</Text>
+      )}
+      {business.isDemo && <Text style={[styles.caption, { color: colors.mutedForeground }]}>DEMO · Sample loyalty program</Text>}
+      {!business.active && <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>Program paused. Your stamps are saved.</Text>}
       <View style={styles.stampGrid}>
         {Array.from({ length: business.goal }, (_, index) => {
           const filled = index < member.stamps;
@@ -962,7 +977,7 @@ function StampCard({
           </Text>
           <Text style={[styles.caption, { color: colors.mutedForeground }]}>
             {complete
-              ? `${business.rewardDescription} · ${pointsLeft} extra stamps saved`
+              ? `${business.rewardDescription} · ${Math.max(member.stamps - business.goal, 0)} extra stamps saved`
               : `${pointsLeft} more ${pointsLeft === 1 ? 'stamp' : 'stamps'} to go · ${business.rewardDescription}`}
           </Text>
         </View>
@@ -970,14 +985,15 @@ function StampCard({
           <Pressable
             testID={`request-stamp-${business.id}`}
             onPress={onRequestStamp}
+            disabled={!business.active}
             style={({ pressed }) => [
               styles.redeemButton,
               { backgroundColor: colors.primary, opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <Text style={[styles.redeemText, { color: colors.primaryForeground }]}>Get stamp</Text>
+            <Text style={[styles.redeemText, { color: colors.primaryForeground }]}>Get Stamp</Text>
           </Pressable>
-          {complete && (
+          {complete && business.active && (
             <Pressable
               testID={`redeem-${business.id}`}
               onPress={onRedeem}
@@ -986,11 +1002,23 @@ function StampCard({
                 { backgroundColor: colors.accent, opacity: pressed ? 0.7 : 1 },
               ]}
             >
-              <Text style={[styles.redeemText, { color: colors.primary }]}>Redeem</Text>
+              <Text style={[styles.redeemText, { color: colors.primary }]}>Redeem Reward</Text>
             </Pressable>
           )}
         </View>
       </View>
+      {!compact && (
+        <View style={{ gap: 6 }}>
+          <Text style={[styles.rewardName, { color: colors.foreground }]}>Your recent activity</Text>
+          {(business.history ?? []).length === 0 && <Text style={[styles.caption, { color: colors.mutedForeground }]}>Your approved visits and redemptions will appear here.</Text>}
+          {(business.history ?? []).slice(0, 10).map(item => (
+            <Text key={item.id} style={[styles.caption, { color: colors.mutedForeground }]}>
+              {item.type === 'stamp' ? '+' : '−'}{item.stamps} · {item.description} · {new Date(item.createdAt).toLocaleDateString()}
+            </Text>
+          ))}
+          {!!business.terms && <Text style={[styles.caption, { color: colors.mutedForeground }]}>{business.terms}</Text>}
+        </View>
+      )}
     </View>
   );
 }
@@ -1095,6 +1123,7 @@ function MerchantOverview({
   onManage,
   onMembers,
   onEditProgram,
+  onToggleProgram,
 }: {
   business: Business;
   stats: NonNullable<Business['analytics']>;
@@ -1102,6 +1131,7 @@ function MerchantOverview({
   onManage: () => void;
   onMembers: () => void;
   onEditProgram: () => void;
+  onToggleProgram: () => void;
 }) {
   const metricCards = [
     { title: 'Loyalty members', value: stats.members.toString(), icon: 'people-outline' },
@@ -1109,9 +1139,26 @@ function MerchantOverview({
     { title: 'Rewards redeemed', value: stats.redemptions.toString(), icon: 'gift-outline' },
     { title: 'Repeat customers', value: `${stats.repeatPercent}%`, icon: 'repeat-outline' },
     { title: 'New members · 30 days', value: stats.newMembers.toString(), icon: 'person-add-outline' },
+    { title: 'Approved visits', value: String(stats.approvedVisits ?? 0), icon: 'checkmark-circle-outline' },
+    { title: 'Rewards available now', value: String(stats.rewardsAvailable ?? 0), icon: 'gift-outline' },
+    { title: 'Rewards earned · current goal', value: String(stats.redemptions + (stats.rewardsAvailable ?? 0)), icon: 'ribbon-outline' },
+    { title: 'Active promotions', value: String(stats.activePromotions ?? 0), icon: 'megaphone-outline' },
   ];
   return (
     <View style={styles.sectionStack}>
+      {business.isDemo && (
+        <View style={[styles.repeatCard, { backgroundColor: colors.secondary }]}>
+          <Text style={[styles.cardTitle, { color: colors.foreground }]}>Guided demo · sample data</Text>
+          <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>
+            Select Daybreak Coffee. Set your own staff PIN in “Edit program & PIN.” Its double-stamp promotion is active.
+            Switch to Customer → My cards → Get Stamp. Staff approval adds 2 stamps, taking the sample card from 6 to 8.
+            Then Redeem Reward with a new PIN approval. Return here to see the recorded visit and redemption.
+          </Text>
+        </View>
+      )}
+      {!business.staffPinConfigured && (
+        <Text style={[styles.bodyText, { color: colors.destructive }]}>Set a staff PIN in program settings before testing stamps or redemptions.</Text>
+      )}
       <View style={[styles.merchantHero, { backgroundColor: colors.primary }]}>
         <View style={styles.heroTop}>
           <View style={styles.heroBrand}>
@@ -1180,6 +1227,10 @@ function MerchantOverview({
         </View>
       </View>
       <View style={styles.quickActions}>
+        <Pressable onPress={onToggleProgram} style={[styles.quickAction, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Ionicons name={business.active ? 'pause-outline' : 'play-outline'} size={18} color={colors.primary} />
+          <Text style={[styles.quickActionTitle, { color: colors.foreground }]}>{business.active ? 'Pause loyalty program' : 'Activate loyalty program'}</Text>
+        </Pressable>
         <Pressable
           testID="edit-program"
           onPress={onEditProgram}
@@ -1376,6 +1427,7 @@ function CampaignCard({
           </View>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>{campaign.title}</Text>
           <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>{campaign.description}</Text>
+          {campaign.type === 'Promotion' && <Text style={[styles.caption, { color: colors.primary }]}>{campaign.usageCount} approved uses</Text>}
           {(campaign.type === 'Promotion' || campaign.startAt || campaign.endAt) && (
             <Text style={[styles.caption, { color: colors.mutedForeground }]}>
               {campaign.type === 'Promotion'
@@ -1568,6 +1620,7 @@ function EmptyState({
 }
 
 function CampaignModal({
+  saving,
   visible,
   title,
   description,
@@ -1589,6 +1642,7 @@ function CampaignModal({
   onChangePromotionBoost,
   onSubmit,
 }: {
+  saving: boolean;
   visible: boolean;
   title: string;
   description: string;
@@ -1742,11 +1796,12 @@ function CampaignModal({
           {!!error && <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>}
           <Pressable
             testID="save-campaign"
+            disabled={saving}
             onPress={onSubmit}
             style={({ pressed }) => [styles.saveButton, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
           >
             <Text style={[styles.saveButtonText, { color: colors.primaryForeground }]}>
-              {editing ? 'Save changes' : 'Create campaign'}
+              {saving ? 'Saving…' : editing ? 'Save changes' : 'Create campaign'}
             </Text>
             <Ionicons name="arrow-forward" size={17} color={colors.primaryForeground} />
           </Pressable>
@@ -1760,6 +1815,20 @@ function CampaignModal({
 }
 
 const styles = StyleSheet.create({
+  cardActionRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  demoPill: { paddingHorizontal: 7, paddingVertical: 4, borderRadius: 7 },
+  demoPillText: { fontSize: 8, letterSpacing: 0.7, fontFamily: 'Inter_700Bold' },
+  joinButton: { minHeight: 44, borderRadius: 13, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  joinButtonText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
+  transactionRow: { minHeight: 58, borderWidth: 1, borderRadius: 15, padding: 11, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  transactionIcon: { width: 31, height: 31, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
+  transactionCount: { minWidth: 32, textAlign: 'right', fontSize: 12, fontFamily: 'Inter_700Bold' },
+  promotionEditor: { gap: 8, paddingVertical: 12 },
+  promotionDateRow: { flexDirection: 'row', gap: 8 },
+  promotionDateInput: { flex: 1, minWidth: 0, paddingHorizontal: 9, fontSize: 11 },
+  promotionBoostRow: { flexDirection: 'row', gap: 6 },
+  promotionBoost: { flex: 1, minHeight: 44, borderWidth: 1, borderRadius: 10, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center' },
+  promotionBoostText: { fontSize: 10, textAlign: 'center', fontFamily: 'Inter_600SemiBold' },
   screen: { flex: 1 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 },
   loadingMark: { width: 48, height: 48, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
@@ -1827,9 +1896,9 @@ const styles = StyleSheet.create({
   caption: { fontSize: 10, lineHeight: 15, fontFamily: 'Inter_400Regular' },
   stampCount: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
   stampCountText: { fontSize: 11, fontFamily: 'Inter_700Bold' },
-  stampGrid: { flexDirection: 'row', justifyContent: 'space-between', gap: 7 },
+  stampGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   stampDot: { width: 30, height: 30, borderWidth: 1, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  cardBottom: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#E6E9DF', paddingTop: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  cardBottom: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: '#E6E9DF', paddingTop: 12, gap: 10 },
   rewardName: { fontSize: 12, fontFamily: 'Inter_600SemiBold', lineHeight: 17 },
   redeemButton: { paddingHorizontal: 13, paddingVertical: 8, borderRadius: 11 },
   redeemText: { fontSize: 11, fontFamily: 'Inter_700Bold' },

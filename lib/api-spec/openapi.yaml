@@ -478,6 +478,12 @@ components:
     MerchantAnalytics:
       type: object
       properties:
+        approvedVisits:
+          type: integer
+        rewardsAvailable:
+          type: integer
+        activePromotions:
+          type: integer
         members:
           type: integer
         stamps:
@@ -502,6 +508,12 @@ components:
     Business:
       type: object
       properties:
+        logoUrl:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentTransaction"
         id:
           type: string
         name:
@@ -606,6 +618,9 @@ components:
     BusinessInput:
       type: object
       properties:
+        logoUrl:
+          type: string
+          maxLength: 2048
         name:
           type: string
           minLength: 2
@@ -643,6 +658,9 @@ components:
     BusinessUpdate:
       type: object
       properties:
+        logoUrl:
+          type: string
+          maxLength: 2048
         name:
           type: string
           minLength: 2
