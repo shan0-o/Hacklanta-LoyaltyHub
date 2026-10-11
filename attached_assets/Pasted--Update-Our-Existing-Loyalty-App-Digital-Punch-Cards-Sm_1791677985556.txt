@@ -1,0 +1,319 @@
+# Update Our Existing Loyalty App — Digital Punch Cards & Small Business Promotions
+
+We are building a loyalty and promotions platform for small businesses that do not have their own mobile apps or sophisticated point-of-sale loyalty systems.
+
+**IMPORTANT: Modify our existing application. Do NOT rebuild it from scratch.** First inspect the current project structure, database, user roles, authentication, components, and existing features. Reuse what already works and preserve the current visual design, accounts, data, navigation, and functionality unless a change is necessary.
+
+Our goal is to make the loyalty experience as easy as using a traditional paper punch card, while providing businesses with digital promotions and customer loyalty analytics.
+
+## 1. Main Product Concept
+
+Our application has two types of users:
+
+**Customers**
+- Discover participating small businesses.
+- Join loyalty programs.
+- View digital punch cards for different businesses.
+- Request stamps after qualifying purchases.
+- Unlock and initiate reward redemptions.
+- View available promotions and reward history.
+
+**Business Owners**
+- Create and customize loyalty programs.
+- Define how many stamps are required for a reward.
+- Set up limited-time promotions.
+- Track loyalty members and customer activity.
+- View stamps issued, repeat visits, and redeemed rewards.
+- Manage staff authorization settings.
+
+The platform must minimize the responsibilities of employees during checkout.
+
+We DO NOT want:
+- Receipt scanning or receipt uploading.
+- QR-code scanning.
+- POS integrations.
+- Employees searching for customers in a dashboard.
+- Employees manually maintaining customers' stamp balances.
+- Employees having to keep a merchant dashboard open during checkout.
+
+## 2. Customer-Initiated Digital Punch Cards
+
+Replace the existing merchant-driven stamp-awarding workflow with a customer-initiated workflow.
+
+**New workflow:**
+
+1. The customer opens their digital loyalty card for a participating business.
+2. The customer taps a button labeled "Get Stamp."
+3. A confirmation screen appears showing the business name and the number of stamps that will be awarded.
+4. The employee enters that business's staff authorization PIN to approve the stamp.
+5. The backend validates the authorization.
+6. If authorized, the customer's stamp count updates immediately.
+7. Show a satisfying punch animation and a success message.
+8. Automatically record the transaction and update the business owner's analytics.
+
+The employee should not need to search for the customer, open a separate application, or manually change any loyalty balances.
+
+**Important security requirements:**
+- A customer must never be able to award themselves stamps.
+- Validate the staff PIN securely on the backend, never through hardcoded frontend logic.
+- Store PINs securely using a suitable password-hashing method.
+- Never expose PINs in API responses, logs, or frontend source code.
+- Limit incorrect PIN attempts and temporarily lock out repeated failures.
+- Require a new authorization for each stamp-awarding action.
+- Prevent duplicate awards caused by double clicks or repeated requests.
+- Keep authorization specific to the relevant business.
+- Do not allow a customer to enter their own account password as a substitute for staff authorization.
+
+This PIN workflow is a hackathon MVP convenience feature. Structure the code so a stronger staff verification method can be added later.
+
+## 3. Customer-Initiated Reward Redemption
+
+Redemption should use the same simple interaction pattern as awarding stamps.
+
+**New workflow:**
+
+1. When a customer has enough stamps, their reward becomes available.
+2. The customer opens their loyalty card.
+3. The customer taps "Redeem Reward."
+4. Show the reward details and ask the customer to confirm that they want to redeem it.
+5. The employee enters the business's staff authorization PIN.
+6. The backend validates the PIN and confirms that the reward is eligible.
+7. The system atomically deducts the required stamps and records the redeemed reward.
+8. Display a clear, visually appealing redemption success screen showing the reward and business name.
+9. Update the customer's wallet and the merchant's analytics immediately.
+
+Redemptions must not be completed solely by a customer clicking a button.
+
+Ensure:
+- Rewards cannot be redeemed without sufficient stamps.
+- One redemption cannot be processed twice.
+- Failed authorization does not remove stamps.
+- Redeemed rewards appear in transaction history.
+- Customers see their updated stamp balance after redemption.
+- The merchant dashboard accurately reflects redeemed rewards.
+
+## 4. Digital Punch Card Design
+
+Keep the existing application aesthetic, but improve the customer loyalty card interface.
+
+Each card should show:
+- Business name and logo.
+- Reward name.
+- Number of stamps collected.
+- Number of stamps required.
+- Visually distinct filled and unfilled stamp circles.
+- Progress toward the next reward.
+- "Get Stamp" button.
+- "Redeem Reward" button when eligible.
+- Available promotions.
+
+Make the cards attractive, modern, and mobile-friendly.
+
+Add subtle animations when stamps are awarded and rewards are redeemed.
+
+Do not redesign the entire application unless necessary.
+
+## 5. Business Loyalty Program Management
+
+Business owners should be able to create and edit their own digital punch-card programs.
+
+Allow owners to configure:
+- Business name, logo, and description.
+- Loyalty program name.
+- Required stamp count, such as 5, 8, or 10.
+- Reward description, such as "Free Coffee," "Free Haircut," or "$5 Off."
+- Basic program terms.
+- Whether the loyalty program is active or paused.
+
+Changes should save to the existing database.
+
+Do not erase customers' existing stamp balances when a business edits its program. Preserve existing progress and handle changes to reward thresholds consistently.
+
+## 6. Promotions — Important Standout Feature
+
+Add a promotions section to the business dashboard.
+
+Business owners should be able to create, activate, schedule, and deactivate promotions without requiring employees to perform extra steps.
+
+For the MVP, include these promotion types:
+
+**A. Double Stamp Promotion**
+Example: "Double Stamp Tuesday"
+
+During the configured promotion period, one authorized punch automatically awards two stamps instead of one.
+
+Employees still complete only one approval.
+
+**B. Limited-Time Offer**
+Example: "Weekend Special — Earn 2 Stamps on Every Visit."
+
+The offer appears on the customer's loyalty card and in the promotions section.
+
+**C. Bonus Stamp Promotion**
+Example: "Grand Opening — Earn 1 Extra Stamp With Your Next Purchase."
+
+The system automatically applies the eligible bonus when a stamp is authorized.
+
+Promotion settings should include:
+- Promotion title.
+- Description.
+- Start date and end date.
+- Applicable business.
+- Stamp multiplier or bonus.
+- Active/inactive status.
+
+**Business rules:**
+- Check promotion eligibility on the backend at the time of the transaction.
+- Show the expected number of stamps before approval.
+- Apply only eligible promotions.
+- Prevent unintended stacking of promotions.
+- Record which promotion was applied.
+- Prevent a promotion from awarding stamps more than once for the same authorization request.
+
+The promotion should never require an employee to manually calculate bonus stamps.
+
+## 7. Business Dashboard & Loyalty Analytics
+
+Preserve and improve the existing merchant dashboard.
+
+The owner dashboard should display:
+- Total loyalty members.
+- New loyalty members.
+- Total stamps awarded.
+- Total approved loyalty visits.
+- Repeat customer activity.
+- Rewards earned.
+- Rewards redeemed.
+- Active promotions.
+- Promotion usage.
+- Recent loyalty transactions.
+
+Metrics must be calculated using actual stored application data, not hardcoded demonstration numbers.
+
+Provide a simple chart showing loyalty activity over time.
+
+Include a customer activity section showing the business's own loyalty members and their relevant loyalty history.
+
+Owners should only have access to data belonging to their own business.
+
+The merchant dashboard is designed for reviewing performance and managing programs, not processing every transaction.
+
+## 8. Customer Discovery & Wallet
+
+Preserve any existing business-discovery and customer-wallet functionality.
+
+Customers should be able to:
+- Browse participating businesses.
+- Join an available loyalty program.
+- See all joined loyalty programs in one wallet.
+- Open individual punch cards.
+- View active promotions.
+- See their transaction history.
+
+Prioritize clarity and a smooth mobile experience.
+
+## 9. Database & Backend Requirements
+
+Reuse the existing database and data models wherever possible.
+
+Add only the fields or tables required for:
+- Staff authorization settings.
+- Stamp transactions.
+- Reward redemption transactions.
+- Promotions and their eligibility rules.
+- Customer loyalty history.
+- Promotion usage tracking.
+
+All stamp awards and redemptions must be validated on the server.
+
+Use database transactions where appropriate to keep balances and history consistent.
+
+Ensure authorization, business ownership, and customer permissions are enforced.
+
+Protect the app against duplicate submissions and unauthorized transactions.
+
+Keep existing accounts and loyalty progress intact.
+
+## 10. Hackathon Demo Mode
+
+We are preparing a hackathon demonstration and need a complete, reliable end-to-end workflow.
+
+Provide sample data for:
+- A coffee shop with a buy-8-get-1-free loyalty program.
+- A bakery with a buy-5-get-1-free program.
+- A barbershop with a visit-based loyalty reward.
+- A customer who already has some stamps.
+- One active double-stamp promotion.
+
+Clearly identify demo data.
+
+Create a guided demonstration that shows:
+
+1. A business owner creates a loyalty program.
+2. The owner activates a double-stamp promotion.
+3. A customer opens their digital punch card.
+4. The customer taps "Get Stamp."
+5. The employee authorizes the punch using the staff PIN.
+6. Two stamps appear automatically because of the active promotion.
+7. The customer reaches the reward threshold.
+8. The customer initiates redemption.
+9. The employee authorizes redemption.
+10. The customer sees the redemption confirmation.
+11. The business dashboard reflects the activity.
+
+The workflow should function using persistent application data, not fake button interactions.
+
+## 11. Development Priorities
+
+We have a very limited amount of time before our hackathon submission.
+
+Complete the work in this order:
+
+**Priority 1 — Core functionality**
+- Customer-initiated stamp requests.
+- Staff PIN authorization.
+- Automatic stamp updates.
+- Customer-initiated reward redemption.
+
+**Priority 2 — Business functionality**
+- Loyalty program management.
+- Business analytics.
+- Promotion creation.
+- Automatic double-stamp promotions.
+
+**Priority 3 — User experience**
+- Improve the digital stamp-card interface.
+- Add stamp and redemption animations.
+- Make the interface mobile-responsive.
+- Improve confirmations and error messages.
+
+**Priority 4 — Testing**
+- Test successful stamp approval.
+- Test incorrect PIN.
+- Test repeated PIN failures.
+- Test duplicate submissions.
+- Test insufficient stamps.
+- Test successful redemption.
+- Test prevention of duplicate redemption.
+- Test promotional bonus stamps.
+- Test data persistence after refresh.
+- Test that analytics update correctly.
+
+## 12. Critical Instructions
+
+- MODIFY THE CURRENT APP. DO NOT CREATE A NEW PROJECT.
+- Preserve the current design wherever possible.
+- Do not remove working features unless they directly conflict with the new workflow.
+- Do not add receipt scanning or QR codes.
+- Do not require employees to open a merchant dashboard during checkout.
+- Do not add unnecessary third-party integrations.
+- Do not invent or simulate successful transactions in the production flow.
+- Explain any features you cannot fully implement instead of pretending they work.
+- Keep the interface intuitive for customers and business owners.
+- Avoid overengineering.
+
+Start by examining the existing project and briefly identifying the components, database changes, and workflows that need modification. Then implement the smallest reliable version of the new system, test it, and refine the interface.
+
+**Our core product promise:**
+
+"Digital loyalty made simple. Customers collect rewards, businesses run promotions, and employees do nothing more than approve a punch — just like a traditional punch card."

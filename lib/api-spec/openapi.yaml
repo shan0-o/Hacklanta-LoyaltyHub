@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: loyalty
+    description: Authenticated loyalty app operations
 paths:
   /healthz:
     get:
@@ -24,7 +26,369 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /loyalty:
+    get:
+      operationId: getLoyaltySnapshot
+      tags: [loyalty]
+      summary: Get the signed-in customer's and owner's loyalty data
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Loyalty data visible to the signed-in user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoyaltySnapshot"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /loyalty/demo-seed:
+    post:
+      operationId: seedDemoBusinesses
+      tags: [loyalty]
+      summary: Create a clearly marked demo workspace for the signed-in owner
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemoSeedInput"
+      responses:
+        "200":
+          description: Demo workspace is available
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoSeedResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /businesses:
+    post:
+      operationId: createBusiness
+      tags: [loyalty]
+      summary: Create a business and loyalty program owned by the signed-in user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessInput"
+      responses:
+        "201":
+          description: Business created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /businesses/{businessId}:
+    patch:
+      operationId: updateBusiness
+      tags: [loyalty]
+      summary: Update an owned business, loyalty program, or staff PIN
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BusinessId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessUpdate"
+      responses:
+        "200":
+          description: Business updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /businesses/{businessId}/memberships:
+    post:
+      operationId: joinBusiness
+      tags: [loyalty]
+      summary: Join a public loyalty program as the signed-in customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BusinessId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinBusinessInput"
+      responses:
+        "200":
+          description: Membership created or existing membership returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /businesses/{businessId}/favorite:
+    patch:
+      operationId: toggleFavorite
+      tags: [loyalty]
+      summary: Save or remove a customer's favorite store
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BusinessId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FavoriteInput"
+      responses:
+        "200":
+          description: Favorite state updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FavoriteResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /businesses/{businessId}/stamps:
+    post:
+      operationId: requestStamp
+      tags: [loyalty]
+      summary: Approve one customer-requested stamp with an authorized staff PIN
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BusinessId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffActionInput"
+      responses:
+        "200":
+          description: Stamp request approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StampResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Invalid staff PIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "423":
+          description: PIN authorization temporarily locked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /businesses/{businessId}/redemptions:
+    post:
+      operationId: redeemReward
+      tags: [loyalty]
+      summary: Redeem an available reward with an authorized staff PIN
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BusinessId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffActionInput"
+      responses:
+        "200":
+          description: Reward redemption approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RedemptionResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Invalid staff PIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "423":
+          description: PIN authorization temporarily locked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /businesses/{businessId}/campaigns:
+    post:
+      operationId: createCampaign
+      tags: [loyalty]
+      summary: Create an owner-managed promotion, reward, tier, event, or giveaway
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BusinessId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignInput"
+      responses:
+        "201":
+          description: Campaign created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /campaigns/{campaignId}:
+    patch:
+      operationId: updateCampaign
+      tags: [loyalty]
+      summary: Edit or pause an owned campaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignInput"
+      responses:
+        "200":
+          description: Campaign updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteCampaign
+      tags: [loyalty]
+      summary: Delete an owned campaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: campaignId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Campaign deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /notices/{noticeId}:
+    patch:
+      operationId: markNoticeRead
+      tags: [loyalty]
+      summary: Mark one of the signed-in customer's reward notices as read
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: noticeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Notice marked read
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    BusinessId:
+      name: businessId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: Request data was invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Authentication is required
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: The requested resource is unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: The request conflicts with the current loyalty balance or idempotency record
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +397,372 @@ components:
           type: string
       required:
         - status
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    Member:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        points:
+          type: integer
+        stamps:
+          type: integer
+        visits:
+          type: integer
+        redemptions:
+          type: integer
+        lifetimeStamps:
+          type: integer
+        isCurrentUser:
+          type: boolean
+      required: [id, name, points, stamps, visits, redemptions, lifetimeStamps, isCurrentUser]
+    Campaign:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [Promotion, Reward, Tier, Event, Giveaway]
+        title:
+          type: string
+        description:
+          type: string
+        active:
+          type: boolean
+        startAt:
+          type: [string, "null"]
+        endAt:
+          type: [string, "null"]
+        multiplier:
+          type: integer
+        bonusStamps:
+          type: integer
+        usageCount:
+          type: integer
+      required: [id, type, title, description, active, startAt, endAt, multiplier, bonusStamps, usageCount]
+    ActivityDay:
+      type: object
+      properties:
+        date:
+          type: string
+        visits:
+          type: integer
+        stamps:
+          type: integer
+      required: [date, visits, stamps]
+    RecentTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+        memberName:
+          type: string
+        type:
+          type: string
+          enum: [stamp, redemption]
+        stamps:
+          type: integer
+        description:
+          type: string
+        createdAt:
+          type: string
+      required: [id, memberName, type, stamps, description, createdAt]
+    MerchantAnalytics:
+      type: object
+      properties:
+        members:
+          type: integer
+        stamps:
+          type: integer
+        redemptions:
+          type: integer
+        repeatPercent:
+          type: integer
+        activeCampaigns:
+          type: integer
+        newMembers:
+          type: integer
+        activity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActivityDay"
+        recentTransactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentTransaction"
+      required: [members, stamps, redemptions, repeatPercent, activeCampaigns, newMembers, activity, recentTransactions]
+    Business:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        location:
+          type: string
+        description:
+          type: string
+        programName:
+          type: string
+        goal:
+          type: integer
+        rewardDescription:
+          type: string
+        terms:
+          type: string
+        active:
+          type: boolean
+        isDemo:
+          type: boolean
+        isOwner:
+          type: boolean
+        staffPinConfigured:
+          type: boolean
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/Member"
+        campaigns:
+          type: array
+          items:
+            $ref: "#/components/schemas/Campaign"
+        analytics:
+          oneOf:
+            - $ref: "#/components/schemas/MerchantAnalytics"
+            - type: "null"
+      required:
+        - id
+        - name
+        - category
+        - location
+        - description
+        - programName
+        - goal
+        - rewardDescription
+        - terms
+        - active
+        - isDemo
+        - isOwner
+        - staffPinConfigured
+        - members
+        - campaigns
+        - analytics
+    Notice:
+      type: object
+      properties:
+        id:
+          type: string
+        businessId:
+          type: string
+        message:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+      required: [id, businessId, message, read, createdAt]
+    LoyaltySnapshot:
+      type: object
+      properties:
+        businesses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Business"
+        favorites:
+          type: array
+          items:
+            type: string
+        notices:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notice"
+      required: [businesses, favorites, notices]
+    DemoSeedResult:
+      type: object
+      properties:
+        created:
+          type: boolean
+        message:
+          type: string
+      required: [created, message]
+    DemoSeedInput:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 80
+      required: [displayName]
+    BusinessInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 80
+        category:
+          type: string
+          minLength: 2
+          maxLength: 40
+        location:
+          type: string
+          minLength: 2
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 500
+        programName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        goal:
+          type: integer
+          minimum: 2
+          maximum: 30
+        rewardDescription:
+          type: string
+          minLength: 2
+          maxLength: 180
+        terms:
+          type: string
+          maxLength: 1000
+        staffPin:
+          type: string
+          pattern: "^[0-9]{4,8}$"
+      required: [name, category, location, description, programName, goal, rewardDescription, terms, staffPin]
+    BusinessUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 80
+        category:
+          type: string
+          minLength: 2
+          maxLength: 40
+        location:
+          type: string
+          minLength: 2
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 500
+        programName:
+          type: string
+          minLength: 2
+          maxLength: 80
+        goal:
+          type: integer
+          minimum: 2
+          maximum: 30
+        rewardDescription:
+          type: string
+          minLength: 2
+          maxLength: 180
+        terms:
+          type: string
+          maxLength: 1000
+        active:
+          type: boolean
+        staffPin:
+          type: string
+          pattern: "^[0-9]{4,8}$"
+      minProperties: 1
+    CampaignInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [Promotion, Reward, Tier, Event, Giveaway]
+        title:
+          type: string
+          minLength: 2
+          maxLength: 80
+        description:
+          type: string
+          minLength: 2
+          maxLength: 500
+        active:
+          type: boolean
+        startAt:
+          type: [string, "null"]
+        endAt:
+          type: [string, "null"]
+        multiplier:
+          type: integer
+          minimum: 1
+          maximum: 5
+        bonusStamps:
+          type: integer
+          minimum: 0
+          maximum: 5
+      required: [type, title, description, active, startAt, endAt, multiplier, bonusStamps]
+    JoinBusinessInput:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 80
+      required: [displayName]
+    FavoriteInput:
+      type: object
+      properties:
+        favorite:
+          type: boolean
+      required: [favorite]
+    FavoriteResult:
+      type: object
+      properties:
+        favorite:
+          type: boolean
+      required: [favorite]
+    StaffActionInput:
+      type: object
+      properties:
+        staffPin:
+          type: string
+          pattern: "^[0-9]{4,8}$"
+        idempotencyKey:
+          type: string
+          minLength: 8
+          maxLength: 120
+      required: [staffPin, idempotencyKey]
+    StampResult:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        awardedStamps:
+          type: integer
+        stampBalance:
+          type: integer
+        rewardReady:
+          type: boolean
+        message:
+          type: string
+      required: [transactionId, awardedStamps, stampBalance, rewardReady, message]
+    RedemptionResult:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        remainingStamps:
+          type: integer
+        rewardDescription:
+          type: string
+        message:
+          type: string
+      required: [transactionId, remainingStamps, rewardDescription, message]
 

@@ -1,217 +1,87 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import {
+  getGetLoyaltySnapshotQueryKey,
+  useCreateBusiness,
+  useCreateCampaign,
+  useDeleteCampaign,
+  useGetLoyaltySnapshot,
+  useJoinBusiness,
+  useMarkNoticeRead,
+  useRedeemReward,
+  useRequestStamp,
+  useSeedDemoBusinesses,
+  useToggleFavorite,
+  useUpdateBusiness,
+  useUpdateCampaign,
+} from "@workspace/api-client-react";
+import type {
+  Business as ApiBusiness,
+  BusinessInput,
+  BusinessUpdate,
+  Campaign as ApiCampaign,
+  CampaignInput,
+  DemoSeedResult,
+  LoyaltySnapshot,
+  Member as ApiMember,
+  Notice,
+  RedemptionResult,
+  StampResult,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import React, { createContext, ReactNode, useCallback, useContext } from "react";
 
-export type CampaignType =
-  | 'Promotion'
-  | 'Reward'
-  | 'Tier'
-  | 'Event'
-  | 'Giveaway';
+export type CampaignType = ApiCampaign["type"];
+export type Campaign = ApiCampaign;
+export type Member = ApiMember;
+export type Business = ApiBusiness;
+export type RewardNotice = Notice;
 
-export type Campaign = {
-  id: string;
-  type: CampaignType;
-  title: string;
-  description: string;
-  active: boolean;
-};
+export type CampaignDraft = Pick<
+  Campaign,
+  "type" | "title" | "description" | "active"
+> &
+  Partial<Pick<Campaign, "startAt" | "endAt" | "multiplier" | "bonusStamps">> & {
+    id?: string;
+  };
 
-export type Member = {
-  id: string;
-  name: string;
-  stamps: number;
-  points: number;
-  visits: number;
-  redemptions: number;
-  lifetimeStamps: number;
-  isCurrentUser?: boolean;
-};
-
-export type Business = {
-  id: string;
-  name: string;
-  category: string;
-  location: string;
-  goal: number;
-  members: Member[];
-  campaigns: Campaign[];
-};
-
-export type RewardNotice = {
-  id: string;
-  businessId: string;
-  message: string;
-  createdAt: string;
-  read: boolean;
-};
-
-type LoyaltyData = {
-  businesses: Business[];
-  favorites: string[];
-  notices: RewardNotice[];
-};
-
-type LoyaltyContextValue = LoyaltyData & {
+type LoyaltyContextValue = LoyaltySnapshot & {
   ready: boolean;
-  toggleFavorite: (businessId: string) => void;
-  saveCampaign: (
+  loading: boolean;
+  error: string | null;
+  refresh: () => Promise<void>;
+  seedDemo: (displayName: string) => Promise<DemoSeedResult>;
+  createBusiness: (input: BusinessInput) => Promise<Business>;
+  updateBusiness: (
     businessId: string,
-    campaign: Omit<Campaign, 'id'> & { id?: string },
-  ) => void;
-  deleteCampaign: (businessId: string, campaignId: string) => void;
-  toggleCampaign: (businessId: string, campaignId: string) => void;
-  addStamp: (businessId: string, memberId: string) => boolean;
-  redeemReward: (businessId: string, memberId: string) => boolean;
-  markNoticeRead: (noticeId: string) => void;
+    input: BusinessUpdate,
+  ) => Promise<Business>;
+  joinBusiness: (businessId: string, displayName: string) => Promise<Business>;
+  toggleFavorite: (businessId: string) => Promise<void>;
+  saveCampaign: (businessId: string, campaign: CampaignDraft) => Promise<void>;
+  deleteCampaign: (businessId: string, campaignId: string) => Promise<void>;
+  toggleCampaign: (businessId: string, campaignId: string) => Promise<void>;
+  requestStamp: (
+    businessId: string,
+    staffPin: string,
+    idempotencyKey: string,
+  ) => Promise<StampResult>;
+  redeemReward: (
+    businessId: string,
+    staffPin: string,
+    idempotencyKey: string,
+  ) => Promise<RedemptionResult>;
+  markNoticeRead: (noticeId: string) => Promise<void>;
 };
 
-const STORAGE_KEY = 'loyalty-loop-v1';
-const currentTime = new Date().toISOString();
-
-const initialData: LoyaltyData = {
-  favorites: ['daybreak'],
+const emptySnapshot: LoyaltySnapshot = {
+  businesses: [],
+  favorites: [],
   notices: [],
-  businesses: [
-    {
-      id: 'daybreak',
-      name: 'Daybreak Coffee',
-      category: 'Coffee & bakery',
-      location: 'West Village · 0.4 mi',
-      goal: 8,
-      members: [
-        {
-          id: 'maya-daybreak',
-          name: 'Maya Chen',
-          stamps: 6,
-          points: 420,
-          visits: 12,
-          redemptions: 3,
-          lifetimeStamps: 36,
-          isCurrentUser: true,
-        },
-        {
-          id: 'jordan-daybreak',
-          name: 'Jordan Lee',
-          stamps: 4,
-          points: 260,
-          visits: 8,
-          redemptions: 2,
-          lifetimeStamps: 24,
-        },
-        {
-          id: 'sasha-daybreak',
-          name: 'Sasha Patel',
-          stamps: 7,
-          points: 510,
-          visits: 19,
-          redemptions: 5,
-          lifetimeStamps: 72,
-        },
-        {
-          id: 'ben-daybreak',
-          name: 'Ben Carter',
-          stamps: 2,
-          points: 90,
-          visits: 3,
-          redemptions: 0,
-          lifetimeStamps: 12,
-        },
-      ],
-      campaigns: [
-        {
-          id: 'campaign-morning',
-          type: 'Promotion',
-          title: 'Your morning, on us',
-          description: 'Buy any two pastries before 10am and your coffee is on us.',
-          active: true,
-        },
-        {
-          id: 'campaign-free-coffee',
-          type: 'Reward',
-          title: 'A coffee on us',
-          description: 'Collect 8 stamps and choose any drink from the menu.',
-          active: true,
-        },
-        {
-          id: 'campaign-regular',
-          type: 'Tier',
-          title: 'The Regulars Club',
-          description: 'Visit 12 times in a month to unlock a monthly tasting.',
-          active: true,
-        },
-        {
-          id: 'campaign-latte-art',
-          type: 'Event',
-          title: 'Latte art, up close',
-          description: 'Saturday · 11am · A free morning with our head barista.',
-          active: true,
-        },
-        {
-          id: 'campaign-beans',
-          type: 'Giveaway',
-          title: 'A month of good mornings',
-          description: 'Enter to win four bags of our seasonal house beans.',
-          active: false,
-        },
-      ],
-    },
-    {
-      id: 'lark',
-      name: 'Lark & Loaf',
-      category: 'Neighborhood bakery',
-      location: 'Chelsea · 0.8 mi',
-      goal: 8,
-      members: [
-        {
-          id: 'maya-lark',
-          name: 'Maya Chen',
-          stamps: 3,
-          points: 120,
-          visits: 5,
-          redemptions: 1,
-          lifetimeStamps: 16,
-          isCurrentUser: true,
-        },
-      ],
-      campaigns: [
-        {
-          id: 'lark-reward',
-          type: 'Reward',
-          title: 'Your next loaf is free',
-          description: 'One stamp with every loaf. Eight stamps unlock your favorite.',
-          active: true,
-        },
-        {
-          id: 'lark-event',
-          type: 'Event',
-          title: 'Sunday sourdough club',
-          description: 'Join us for a warm loaf and a behind-the-scenes bake.',
-          active: true,
-        },
-        {
-          id: 'lark-giveaway',
-          type: 'Giveaway',
-          title: 'The baker’s dozen',
-          description: 'Win a box of thirteen fresh-baked favorites.',
-          active: true,
-        },
-      ],
-    },
-  ],
 };
 
 const LoyaltyContext = createContext<LoyaltyContextValue | null>(null);
 
-function makeId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+function readableError(error: unknown) {
+  return error instanceof Error ? error.message : "The request could not be completed.";
 }
 
 export function LoyaltyProvider({
@@ -221,238 +91,197 @@ export function LoyaltyProvider({
   children: ReactNode;
   userId: string;
 }) {
-  const [data, setData] = useState<LoyaltyData>(initialData);
-  const [ready, setReady] = useState(false);
-  const storageKey = `${STORAGE_KEY}:${userId}`;
+  const queryClient = useQueryClient();
+  const snapshotKey = [...getGetLoyaltySnapshotQueryKey(), userId];
+  const snapshotQuery = useGetLoyaltySnapshot({
+    query: {
+      queryKey: snapshotKey,
+      enabled: Boolean(userId),
+      staleTime: 15_000,
+    },
+  });
+  const invalidateSnapshot = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: snapshotKey }),
+    [queryClient, userId],
+  );
 
-  useEffect(() => {
-    let mounted = true;
-    setReady(false);
-    setData(initialData);
-    AsyncStorage.getItem(storageKey)
-      .then((saved) => {
-        if (!mounted) return;
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved) as LoyaltyData;
-            if (Array.isArray(parsed.businesses)) setData(parsed);
-          } catch {
-            setData(initialData);
-          }
-        }
-        setReady(true);
-      })
-      .catch(() => setReady(true));
-    return () => {
-      mounted = false;
-    };
-  }, [storageKey]);
+  const seedDemoMutation = useSeedDemoBusinesses({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const createBusinessMutation = useCreateBusiness({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const updateBusinessMutation = useUpdateBusiness({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const createCampaignMutation = useCreateCampaign({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const updateCampaignMutation = useUpdateCampaign({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const deleteCampaignMutation = useDeleteCampaign({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const joinBusinessMutation = useJoinBusiness({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const favoriteMutation = useToggleFavorite({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const stampMutation = useRequestStamp({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const redemptionMutation = useRedeemReward({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
+  const noticeMutation = useMarkNoticeRead({
+    mutation: { onSuccess: invalidateSnapshot },
+  });
 
-  useEffect(() => {
-    if (ready) AsyncStorage.setItem(storageKey, JSON.stringify(data)).catch(() => {});
-  }, [data, ready, storageKey]);
+  const snapshot = snapshotQuery.data ?? emptySnapshot;
 
-  const update = useCallback((transform: (current: LoyaltyData) => LoyaltyData) => {
-    setData((current) => transform(current));
-  }, []);
+  const refresh = useCallback(async () => {
+    await snapshotQuery.refetch();
+  }, [snapshotQuery]);
 
+  const seedDemo = useCallback(
+    async (displayName: string) =>
+      seedDemoMutation.mutateAsync({ data: { displayName } }),
+    [seedDemoMutation],
+  );
+  const createBusiness = useCallback(
+    async (input: BusinessInput) =>
+      createBusinessMutation.mutateAsync({ data: input }),
+    [createBusinessMutation],
+  );
+  const updateBusiness = useCallback(
+    async (businessId: string, input: BusinessUpdate) =>
+      updateBusinessMutation.mutateAsync({ businessId, data: input }),
+    [updateBusinessMutation],
+  );
+  const joinBusiness = useCallback(
+    async (businessId: string, displayName: string) =>
+      joinBusinessMutation.mutateAsync({
+        businessId,
+        data: { displayName },
+      }),
+    [joinBusinessMutation],
+  );
   const toggleFavorite = useCallback(
-    (businessId: string) => {
-      update((current) => ({
-        ...current,
-        favorites: current.favorites.includes(businessId)
-          ? current.favorites.filter((id) => id !== businessId)
-          : [...current.favorites, businessId],
-      }));
-    },
-    [update],
+    async (businessId: string) =>
+      favoriteMutation.mutateAsync({
+        businessId,
+        data: {
+          favorite: !snapshot.favorites.includes(businessId),
+        },
+      }).then(() => undefined),
+    [favoriteMutation, snapshot.favorites],
   );
-
   const saveCampaign = useCallback(
-    (businessId: string, campaign: Omit<Campaign, 'id'> & { id?: string }) => {
-      update((current) => ({
-        ...current,
-        businesses: current.businesses.map((business) => {
-          if (business.id !== businessId) return business;
-          const saved: Campaign = {
-            id: campaign.id ?? makeId(),
-            type: campaign.type,
-            title: campaign.title.trim(),
-            description: campaign.description.trim(),
-            active: campaign.active,
-          };
-          const exists = business.campaigns.some((item) => item.id === saved.id);
-          return {
-            ...business,
-            campaigns: exists
-              ? business.campaigns.map((item) => (item.id === saved.id ? saved : item))
-              : [saved, ...business.campaigns],
-          };
-        }),
-      }));
+    async (businessId: string, campaign: CampaignDraft) => {
+      const input: CampaignInput = {
+        type: campaign.type,
+        title: campaign.title,
+        description: campaign.description,
+        active: campaign.active,
+        startAt: campaign.startAt ?? null,
+        endAt: campaign.endAt ?? null,
+        multiplier: campaign.multiplier ?? 1,
+        bonusStamps: campaign.bonusStamps ?? 0,
+      };
+      if (campaign.id) {
+        await updateCampaignMutation.mutateAsync({
+          campaignId: campaign.id,
+          data: input,
+        });
+      } else {
+        await createCampaignMutation.mutateAsync({
+          businessId,
+          data: input,
+        });
+      }
     },
-    [update],
+    [createCampaignMutation, updateCampaignMutation],
   );
-
   const deleteCampaign = useCallback(
-    (businessId: string, campaignId: string) => {
-      update((current) => ({
-        ...current,
-        businesses: current.businesses.map((business) =>
-          business.id === businessId
-            ? {
-                ...business,
-                campaigns: business.campaigns.filter((item) => item.id !== campaignId),
-              }
-            : business,
-        ),
-      }));
+    async (_businessId: string, campaignId: string) => {
+      await deleteCampaignMutation.mutateAsync({ campaignId });
     },
-    [update],
+    [deleteCampaignMutation],
   );
-
   const toggleCampaign = useCallback(
-    (businessId: string, campaignId: string) => {
-      update((current) => ({
-        ...current,
-        businesses: current.businesses.map((business) =>
-          business.id === businessId
-            ? {
-                ...business,
-                campaigns: business.campaigns.map((item) =>
-                  item.id === campaignId ? { ...item, active: !item.active } : item,
-                ),
-              }
-            : business,
-        ),
-      }));
-    },
-    [update],
-  );
-
-  const addStamp = useCallback(
-    (businessId: string, memberId: string) => {
-      let reachedReward = false;
-      update((current) => {
-        const business = current.businesses.find((item) => item.id === businessId);
-        const member = business?.members.find((item) => item.id === memberId);
-        if (!business || !member || member.stamps >= business.goal) return current;
-        const nextStamps = member.stamps + 1;
-        reachedReward = nextStamps === business.goal;
-        const updatedBusiness: Business = {
-          ...business,
-          members: business.members.map((item) =>
-            item.id === memberId
-              ? {
-                  ...item,
-                  stamps: nextStamps,
-                  points: item.points + 10,
-                  visits: item.visits + 1,
-                  lifetimeStamps: item.lifetimeStamps + 1,
-                }
-              : item,
-          ),
-        };
-        const notices = reachedReward
-          ? [
-              {
-                id: makeId(),
-                businessId,
-                message: `Your reward at ${business.name} is ready to redeem.`,
-                createdAt: currentTime,
-                read: false,
-              },
-              ...current.notices,
-            ]
-          : current.notices;
-        return {
-          ...current,
-          businesses: current.businesses.map((item) =>
-            item.id === businessId ? updatedBusiness : item,
-          ),
-          notices,
-        };
+    async (businessId: string, campaignId: string) => {
+      const business = snapshot.businesses.find((item) => item.id === businessId);
+      const campaign = business?.campaigns.find((item) => item.id === campaignId);
+      if (!campaign) throw new Error("Campaign not found.");
+      await updateCampaignMutation.mutateAsync({
+        campaignId,
+        data: {
+          type: campaign.type,
+          title: campaign.title,
+          description: campaign.description,
+          active: !campaign.active,
+          startAt: campaign.startAt,
+          endAt: campaign.endAt,
+          multiplier: campaign.multiplier,
+          bonusStamps: campaign.bonusStamps,
+        },
       });
-      return reachedReward;
     },
-    [update],
+    [snapshot.businesses, updateCampaignMutation],
   );
-
+  const requestStamp = useCallback(
+    async (businessId: string, staffPin: string, idempotencyKey: string) =>
+      stampMutation.mutateAsync({
+        businessId,
+        data: { staffPin, idempotencyKey },
+      }),
+    [stampMutation],
+  );
   const redeemReward = useCallback(
-    (businessId: string, memberId: string) => {
-      let redeemed = false;
-      update((current) => {
-        const business = current.businesses.find((item) => item.id === businessId);
-        const member = business?.members.find((item) => item.id === memberId);
-        if (!business || !member || member.stamps < business.goal) return current;
-        redeemed = true;
-        return {
-          ...current,
-          businesses: current.businesses.map((item) =>
-            item.id === businessId
-              ? {
-                  ...item,
-                  members: item.members.map((person) =>
-                    person.id === memberId
-                      ? {
-                          ...person,
-                          stamps: 0,
-                          redemptions: person.redemptions + 1,
-                        }
-                      : person,
-                  ),
-                }
-              : item,
-          ),
-        };
-      });
-      return redeemed;
-    },
-    [update],
+    async (businessId: string, staffPin: string, idempotencyKey: string) =>
+      redemptionMutation.mutateAsync({
+        businessId,
+        data: { staffPin, idempotencyKey },
+      }),
+    [redemptionMutation],
   );
-
   const markNoticeRead = useCallback(
-    (noticeId: string) => {
-      update((current) => ({
-        ...current,
-        notices: current.notices.map((notice) =>
-          notice.id === noticeId ? { ...notice, read: true } : notice,
-        ),
-      }));
+    async (noticeId: string) => {
+      await noticeMutation.mutateAsync({ noticeId });
     },
-    [update],
+    [noticeMutation],
   );
 
-  const value = useMemo(
-    () => ({
-      ...data,
-      ready,
-      toggleFavorite,
-      saveCampaign,
-      deleteCampaign,
-      toggleCampaign,
-      addStamp,
-      redeemReward,
-      markNoticeRead,
-    }),
-    [
-      data,
-      ready,
-      toggleFavorite,
-      saveCampaign,
-      deleteCampaign,
-      toggleCampaign,
-      addStamp,
-      redeemReward,
-      markNoticeRead,
-    ],
-  );
+  const value: LoyaltyContextValue = {
+    ...snapshot,
+    ready: snapshotQuery.isSuccess,
+    loading: snapshotQuery.isLoading,
+    error: snapshotQuery.isError ? readableError(snapshotQuery.error) : null,
+    refresh,
+    seedDemo,
+    createBusiness,
+    updateBusiness,
+    joinBusiness,
+    toggleFavorite,
+    saveCampaign,
+    deleteCampaign,
+    toggleCampaign,
+    requestStamp,
+    redeemReward,
+    markNoticeRead,
+  };
 
   return <LoyaltyContext.Provider value={value}>{children}</LoyaltyContext.Provider>;
 }
 
 export function useLoyalty() {
   const context = useContext(LoyaltyContext);
-  if (!context) throw new Error('useLoyalty must be used inside LoyaltyProvider');
+  if (!context) throw new Error("useLoyalty must be used inside LoyaltyProvider.");
   return context;
+}
+
+export function getLoyaltyErrorMessage(error: unknown) {
+  return readableError(error);
 }
