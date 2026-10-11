@@ -104,9 +104,9 @@ The demo allows judges to explore both the customer and merchant interfaces, inc
 ## Running Locally
 The source code is available in this GitHub repository.
 Requirements:
-    •    Node.js
-    •    npm
-    •    Expo Go (if testing the mobile app)
+- Node.js
+- npm
+- Expo Go (if testing the mobile app)
 Setup:
 1. Clone this repository.
 2. Navigate to the project directory.
