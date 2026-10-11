@@ -21,8 +21,14 @@ Staff approval codes must be app-generated, exactly four digits, change every th
 
 **How to apply:** Owner-only disclosure is separate from customer snapshots; expired codes must fail server-side even if the app has been closed.
 
-Keep the customer experience centered on My Cards and Discover, without a separate Home page or customer perk-point display. Preserve merchant navigation and the merchant retention dashboard when reorganizing customer pages.
+Keep the customer experience centered on My Cards and Discover, without a separate Home page or customer perk-point display. The user considers the customer interface complete; merchant work must not alter it.
 
 **Why:** The user explicitly limited this simplification to customer navigation and page organization.
 
 **How to apply:** Reuse existing cards, transaction history, promotions, and approval flows rather than inventing replacement loyalty logic.
+
+Merchant retention counts each authorized punch transaction as one visit, regardless of promotional stamp quantity; redemption is not a visit. New Tier campaigns are discontinued, but existing Tier records must be preserved.
+
+**Why:** The hackathon product is intended to give independent businesses useful retention information without extra employee work or new points systems.
+
+**How to apply:** Keep merchant analytics scoped to the selected business. Compare rolling 30-day windows and show insufficient-history messaging rather than inventing comparisons.
