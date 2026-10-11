@@ -62,6 +62,8 @@ export const GetLoyaltySnapshotResponse = zod.object({
   "isOwner": zod.boolean(),
   "staffPinConfigured": zod.boolean(),
   "members": zod.array(zod.object({
+  "joinedAt": zod.string().optional(),
+  "lastVisitAt": zod.string().nullish(),
   "id": zod.string(),
   "name": zod.string(),
   "points": zod.number().int(),
@@ -84,6 +86,22 @@ export const GetLoyaltySnapshotResponse = zod.object({
   "usageCount": zod.number().int()
 })),
   "analytics": zod.union([zod.object({
+  "retention": zod.object({
+  "activeCustomers": zod.number().int(),
+  "repeatCustomers": zod.number().int(),
+  "repeatRate": zod.number(),
+  "previousActiveCustomers": zod.number().int(),
+  "previousRepeatRate": zod.number(),
+  "comparisonAvailable": zod.boolean(),
+  "activeCustomerChange": zod.number().int(),
+  "repeatRateChange": zod.number(),
+  "weeks": zod.array(zod.object({
+  "start": zod.string(),
+  "end": zod.string(),
+  "activeCustomers": zod.number().int(),
+  "repeatRate": zod.number()
+}))
+}).optional(),
   "approvedVisits": zod.number().int().optional(),
   "rewardsAvailable": zod.number().int().optional(),
   "activePromotions": zod.number().int().optional(),
@@ -201,6 +219,8 @@ export const CreateBusinessResponse = zod.object({
   "isOwner": zod.boolean(),
   "staffPinConfigured": zod.boolean(),
   "members": zod.array(zod.object({
+  "joinedAt": zod.string().optional(),
+  "lastVisitAt": zod.string().nullish(),
   "id": zod.string(),
   "name": zod.string(),
   "points": zod.number().int(),
@@ -223,6 +243,22 @@ export const CreateBusinessResponse = zod.object({
   "usageCount": zod.number().int()
 })),
   "analytics": zod.union([zod.object({
+  "retention": zod.object({
+  "activeCustomers": zod.number().int(),
+  "repeatCustomers": zod.number().int(),
+  "repeatRate": zod.number(),
+  "previousActiveCustomers": zod.number().int(),
+  "previousRepeatRate": zod.number(),
+  "comparisonAvailable": zod.boolean(),
+  "activeCustomerChange": zod.number().int(),
+  "repeatRateChange": zod.number(),
+  "weeks": zod.array(zod.object({
+  "start": zod.string(),
+  "end": zod.string(),
+  "activeCustomers": zod.number().int(),
+  "repeatRate": zod.number()
+}))
+}).optional(),
   "approvedVisits": zod.number().int().optional(),
   "rewardsAvailable": zod.number().int().optional(),
   "activePromotions": zod.number().int().optional(),
@@ -319,6 +355,8 @@ export const UpdateBusinessResponse = zod.object({
   "isOwner": zod.boolean(),
   "staffPinConfigured": zod.boolean(),
   "members": zod.array(zod.object({
+  "joinedAt": zod.string().optional(),
+  "lastVisitAt": zod.string().nullish(),
   "id": zod.string(),
   "name": zod.string(),
   "points": zod.number().int(),
@@ -341,6 +379,22 @@ export const UpdateBusinessResponse = zod.object({
   "usageCount": zod.number().int()
 })),
   "analytics": zod.union([zod.object({
+  "retention": zod.object({
+  "activeCustomers": zod.number().int(),
+  "repeatCustomers": zod.number().int(),
+  "repeatRate": zod.number(),
+  "previousActiveCustomers": zod.number().int(),
+  "previousRepeatRate": zod.number(),
+  "comparisonAvailable": zod.boolean(),
+  "activeCustomerChange": zod.number().int(),
+  "repeatRateChange": zod.number(),
+  "weeks": zod.array(zod.object({
+  "start": zod.string(),
+  "end": zod.string(),
+  "activeCustomers": zod.number().int(),
+  "repeatRate": zod.number()
+}))
+}).optional(),
   "approvedVisits": zod.number().int().optional(),
   "rewardsAvailable": zod.number().int().optional(),
   "activePromotions": zod.number().int().optional(),
@@ -406,6 +460,8 @@ export const JoinBusinessResponse = zod.object({
   "isOwner": zod.boolean(),
   "staffPinConfigured": zod.boolean(),
   "members": zod.array(zod.object({
+  "joinedAt": zod.string().optional(),
+  "lastVisitAt": zod.string().nullish(),
   "id": zod.string(),
   "name": zod.string(),
   "points": zod.number().int(),
@@ -428,6 +484,22 @@ export const JoinBusinessResponse = zod.object({
   "usageCount": zod.number().int()
 })),
   "analytics": zod.union([zod.object({
+  "retention": zod.object({
+  "activeCustomers": zod.number().int(),
+  "repeatCustomers": zod.number().int(),
+  "repeatRate": zod.number(),
+  "previousActiveCustomers": zod.number().int(),
+  "previousRepeatRate": zod.number(),
+  "comparisonAvailable": zod.boolean(),
+  "activeCustomerChange": zod.number().int(),
+  "repeatRateChange": zod.number(),
+  "weeks": zod.array(zod.object({
+  "start": zod.string(),
+  "end": zod.string(),
+  "activeCustomers": zod.number().int(),
+  "repeatRate": zod.number()
+}))
+}).optional(),
   "approvedVisits": zod.number().int().optional(),
   "rewardsAvailable": zod.number().int().optional(),
   "activePromotions": zod.number().int().optional(),

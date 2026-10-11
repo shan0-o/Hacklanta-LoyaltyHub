@@ -28,7 +28,7 @@ import {
 import { ProgramEditorModal } from '@/components/ProgramEditorModal';
 import { MerchantStaffPin } from '@/components/MerchantStaffPin';
 import { LoyaltyActionModal } from '@/components/LoyaltyActionModal';
-import { MerchantActivityChart } from '@/components/MerchantActivityChart';
+import { RepeatAnalyticsModal } from '@/components/RepeatAnalyticsModal';
 
 type Role = 'customer' | 'merchant';
 type CustomerTab = 'cards' | 'discover' | 'updates';
@@ -38,7 +38,6 @@ const currencyPoints = (value: number) => new Intl.NumberFormat('en-US').format(
 const campaignTypes: CampaignType[] = [
   'Promotion',
   'Reward',
-  'Tier',
   'Event',
   'Giveaway',
 ];
@@ -510,7 +509,6 @@ export default function LoyaltyHome() {
             stats={merchantStats}
             colors={colors}
             onManage={() => setTab('manage')}
-            onMembers={() => setTab('members')}
             onEditProgram={() => setShowProgramForm(true)}
             onToggleProgram={() => void updateBusiness(primaryBusiness.id, { active: !primaryBusiness.active }).catch(err =>
               Alert.alert('Program not updated', getLoyaltyErrorMessage(err)),
@@ -533,7 +531,9 @@ export default function LoyaltyHome() {
         )}
         {role === 'merchant' && primaryBusiness && tab === 'members' && (
           <MerchantMembers
+            key={primaryBusiness.id}
             business={primaryBusiness}
+            transactions={merchantStats.recentTransactions}
             colors={colors}
           />
         )}
@@ -1148,7 +1148,6 @@ function MerchantOverview({
   stats,
   colors,
   onManage,
-  onMembers,
   onEditProgram,
   onToggleProgram,
 }: {
@@ -1156,7 +1155,6 @@ function MerchantOverview({
   stats: NonNullable<Business['analytics']>;
   colors: ReturnType<typeof useColors>;
   onManage: () => void;
-  onMembers: () => void;
   onEditProgram: () => void;
   onToggleProgram: () => void;
 }) {
@@ -1164,15 +1162,23 @@ function MerchantOverview({
     { title: 'Loyalty members', value: stats.members.toString(), icon: 'people-outline' },
     { title: 'Stamps rewarded', value: currencyPoints(stats.stamps), icon: 'albums-outline' },
     { title: 'Rewards redeemed', value: stats.redemptions.toString(), icon: 'gift-outline' },
-    { title: 'Repeat customers', value: `${stats.repeatPercent}%`, icon: 'repeat-outline' },
-    { title: 'New members · 30 days', value: stats.newMembers.toString(), icon: 'person-add-outline' },
-    { title: 'Approved visits', value: String(stats.approvedVisits ?? 0), icon: 'checkmark-circle-outline' },
-    { title: 'Rewards available now', value: String(stats.rewardsAvailable ?? 0), icon: 'gift-outline' },
-    { title: 'Rewards earned · current goal', value: String(stats.redemptions + (stats.rewardsAvailable ?? 0)), icon: 'ribbon-outline' },
+    {
+      title: 'Repeat customers · 30 days',
+      value: stats.retention ? `${Math.round(stats.retention.repeatRate * 10) / 10}%` : '—',
+      icon: 'repeat-outline',
+      onPress: () => setShowAnalytics(true),
+    },
     { title: 'Active promotions', value: String(stats.activePromotions ?? 0), icon: 'megaphone-outline' },
-  ];
+  ] as { title: string; value: string; icon: string; onPress?: () => void }[];
+  const [showAnalytics, setShowAnalytics] = useState(false);
   return (
     <View style={styles.sectionStack}>
+      <RepeatAnalyticsModal
+        visible={showAnalytics}
+        onClose={() => setShowAnalytics(false)}
+        retention={stats.retention}
+        businessName={business.name}
+      />
       {business.isDemo && (
         <View style={[styles.repeatCard, { backgroundColor: colors.secondary }]}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Guided demo · sample data</Text>
@@ -1216,9 +1222,15 @@ function MerchantOverview({
       </View>
       <View style={styles.metricGrid}>
         {metricCards.map((metric, index) => (
-          <View
+          <Pressable
             key={metric.title}
-            style={[
+            testID={metric.onPress ? 'repeat-customers-metric' : undefined}
+            disabled={!metric.onPress}
+            onPress={metric.onPress}
+            accessibilityRole={metric.onPress ? 'button' : undefined}
+            accessibilityHint={metric.onPress ? 'Opens 30-day retention analytics' : undefined}
+            style={({ pressed }) => [
+              { opacity: pressed ? 0.75 : 1 },
               styles.metricCard,
               { backgroundColor: colors.card, borderColor: colors.border },
               index === 0 && styles.metricCardFeatured,
@@ -1233,24 +1245,12 @@ function MerchantOverview({
               <Ionicons name={metric.icon as React.ComponentProps<typeof Ionicons>['name']} size={17} color={colors.primary} />
             </View>
             <Text style={[styles.metricValue, { color: colors.foreground }]}>{metric.value}</Text>
-            <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>{metric.title}</Text>
-          </View>
-        ))}
-      </View>
-      <MerchantActivityChart activity={stats.activity} />
-      <View style={[styles.repeatCard, { backgroundColor: colors.secondary }]}>
-        <View style={styles.repeatTop}>
-          <View>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>A reason to come back</Text>
-            <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>
-              {stats.repeatPercent}% of members have visited more than once
+            <Text style={[styles.metricLabel, { color: colors.mutedForeground }]}>
+              {metric.title}
+              {metric.onPress ? '  ›' : ''}
             </Text>
-          </View>
-          <Text style={[styles.repeatPercent, { color: colors.primary }]}>{stats.repeatPercent}%</Text>
-        </View>
-        <View style={[styles.progressTrack, { backgroundColor: colors.card }]}>
-          <View style={[styles.progressFill, { backgroundColor: colors.primary, width: `${stats.repeatPercent}%` }]} />
-        </View>
+          </Pressable>
+        ))}
       </View>
       <View style={styles.quickActions}>
         <Pressable onPress={onToggleProgram} style={[styles.quickAction, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -1279,63 +1279,7 @@ function MerchantOverview({
           <Text style={[styles.quickActionTitle, { color: colors.foreground }]}>Create campaign</Text>
           <Ionicons name="arrow-forward" size={16} color={colors.mutedForeground} />
         </Pressable>
-        <Pressable
-          testID="view-members"
-          onPress={onMembers}
-          style={({ pressed }) => [styles.quickAction, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.75 : 1 }]}
-        >
-          <View style={[styles.quickActionIcon, { backgroundColor: colors.secondary }]}>
-            <Ionicons name="people-outline" size={17} color={colors.primary} />
-          </View>
-          <Text style={[styles.quickActionTitle, { color: colors.foreground }]}>View members</Text>
-          <Ionicons name="arrow-forward" size={16} color={colors.mutedForeground} />
-        </Pressable>
       </View>
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent loyalty members</Text>
-          <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>Your community, growing one visit at a time</Text>
-        </View>
-        <Pressable onPress={onMembers} hitSlop={8}>
-          <Text style={[styles.linkText, { color: colors.primary }]}>See all</Text>
-        </Pressable>
-      </View>
-      {business.members.slice(0, 3).map((member) => (
-        <MemberMiniRow key={member.id} member={member} colors={colors} />
-      ))}
-      <View style={styles.sectionHeader}>
-        <View>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent reward activity</Text>
-          <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>Server-recorded stamps and redemptions</Text>
-        </View>
-      </View>
-      {stats.recentTransactions.length === 0 ? (
-        <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>Approved loyalty activity will appear here.</Text>
-      ) : (
-        stats.recentTransactions.slice(0, 6).map((transaction) => (
-          <View
-            key={transaction.id}
-            style={[styles.transactionRow, { backgroundColor: colors.card, borderColor: colors.border }]}
-          >
-            <View style={[styles.transactionIcon, { backgroundColor: transaction.type === 'stamp' ? colors.accent : colors.secondary }]}>
-              <Ionicons
-                name={transaction.type === 'stamp' ? 'add' : 'gift-outline'}
-                size={16}
-                color={colors.primary}
-              />
-            </View>
-            <View style={styles.flexOne}>
-              <Text style={[styles.memberName, { color: colors.foreground }]}>{transaction.memberName}</Text>
-              <Text style={[styles.caption, { color: colors.mutedForeground }]} numberOfLines={1}>
-                {transaction.description} · {new Date(transaction.createdAt).toLocaleDateString()}
-              </Text>
-            </View>
-            <Text style={[styles.transactionCount, { color: transaction.type === 'stamp' ? colors.primary : colors.mutedForeground }]}>
-              {transaction.type === 'stamp' ? `+${transaction.stamps}` : `−${transaction.stamps}`}
-            </Text>
-          </View>
-        ))
-      )}
     </View>
   );
 }
@@ -1409,7 +1353,7 @@ function MerchantManage({
         ))
       )}
       <Text style={[styles.helperNote, { color: colors.mutedForeground }]}>
-        Promotions, rewards, tiers, events and giveaways can each be edited or paused independently.
+        Promotions, rewards, events and giveaways can each be edited or paused independently.
       </Text>
     </View>
   );
@@ -1487,17 +1431,52 @@ function CampaignCard({
   );
 }
 
+const memberSorts = [
+  { key: 'joined', label: 'Most Recently Joined' },
+  { key: 'oldest', label: 'Oldest Members' },
+  { key: 'visited', label: 'Most Recent Visit' },
+  { key: 'visits', label: 'Most Visits' },
+  { key: 'name', label: 'Name A–Z' },
+] as const;
+type MemberSort = (typeof memberSorts)[number]['key'];
+const timeOf = (value?: string | null) => {
+  const t = value ? Date.parse(value) : NaN;
+  return Number.isNaN(t) ? null : t;
+};
+const byTimeDesc = (x?: string | null, y?: string | null) => {
+  const a = timeOf(x);
+  const b = timeOf(y);
+  if (a === null && b === null) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return b - a;
+};
+
 function MerchantMembers({
   business,
+  transactions,
   colors,
 }: {
   business: Business;
+  transactions: NonNullable<Business['analytics']>['recentTransactions'];
   colors: ReturnType<typeof useColors>;
 }) {
   const [search, setSearch] = useState('');
-  const filteredMembers = business.members.filter((member) =>
-    member.name.toLowerCase().includes(search.trim().toLowerCase()),
-  );
+  const [sort, setSort] = useState<MemberSort>('joined');
+  const [sortOpen, setSortOpen] = useState(false);
+  const stats = {
+    recentTransactions: [...transactions].sort((x, y) => byTimeDesc(x.createdAt, y.createdAt)),
+  };
+  const filteredMembers = business.members
+    .filter((member) => member.name.toLowerCase().includes(search.trim().toLowerCase()))
+    .sort((x, y) => {
+      const tie = x.name.localeCompare(y.name);
+      if (sort === 'joined') return byTimeDesc(x.joinedAt, y.joinedAt) || tie;
+      if (sort === 'visited') return byTimeDesc(x.lastVisitAt, y.lastVisitAt) || tie;
+      if (sort === 'visits') return y.visits - x.visits || tie;
+      if (sort === 'oldest') return (timeOf(x.joinedAt) ?? Infinity) - (timeOf(y.joinedAt) ?? Infinity) || tie;
+      return tie;
+    });
   const totals = business.members.reduce(
     (result, member) => ({
       visits: result.visits + member.visits,
@@ -1536,6 +1515,33 @@ function MerchantMembers({
           returnKeyType="search"
         />
       </View>
+      <Pressable
+        testID="member-sort-toggle"
+        accessibilityRole="button"
+        accessibilityState={{ expanded: sortOpen }}
+        onPress={() => setSortOpen(value => !value)}
+        style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}
+      >
+        <Text style={[styles.bodyText, { color: colors.foreground, flex: 1 }]}>
+          Sort By: {memberSorts.find(option => option.key === sort)?.label}
+        </Text>
+        <Ionicons name={sortOpen ? 'chevron-up' : 'chevron-down'} size={18} color={colors.primary} />
+      </Pressable>
+      {sortOpen && <View style={{ gap: 8 }}>
+        {memberSorts.map((option) => {
+          const selected = option.key === sort;
+          return (
+            <Pressable
+              key={option.key}
+              testID={`sort-${option.key}`}
+              onPress={() => { setSort(option.key); setSortOpen(false); }}
+              style={[styles.filterChip, { backgroundColor: selected ? colors.primary : colors.card, borderColor: selected ? colors.primary : colors.border }]}
+            >
+              <Text style={[styles.filterText, { color: selected ? colors.primaryForeground : colors.foreground }]}>{option.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>}
       <View style={styles.sectionHeader}>
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Member activity</Text>
@@ -1565,10 +1571,11 @@ function MerchantMembers({
                 <Text style={[styles.caption, { color: colors.mutedForeground }]}>
                   {member.visits} visits · {member.redemptions} rewards redeemed
                 </Text>
-              </View>
-              <View style={styles.memberPointsCol}>
-                <Text style={[styles.memberPointsLarge, { color: colors.foreground }]}>{member.points}</Text>
-                <Text style={[styles.caption, { color: colors.mutedForeground }]}>points</Text>
+                <Text style={[styles.caption, { color: colors.mutedForeground }]}>
+                  {member.joinedAt ? `Joined ${new Date(member.joinedAt).toLocaleDateString()}` : 'Join date unknown'}
+                  {' · '}
+                  {member.lastVisitAt ? `Last visit ${new Date(member.lastVisitAt).toLocaleDateString()}` : 'No visits yet'}
+                </Text>
               </View>
             </View>
             <View style={styles.memberStampRow}>
@@ -1592,6 +1599,41 @@ function MerchantMembers({
                 />
               </View>
             </View>
+          </View>
+        ))
+      )}
+      <View style={styles.sectionHeader}>
+        <View>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent reward activity</Text>
+          <Text style={[styles.sectionSubtitle, { color: colors.mutedForeground }]}>Newest first · server-recorded stamps and redemptions</Text>
+        </View>
+      </View>
+      {stats.recentTransactions.length === 0 ? (
+        <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>Approved loyalty activity will appear here.</Text>
+      ) : (
+        stats.recentTransactions.slice(0, 10).map((transaction) => (
+          <View
+            key={transaction.id}
+            style={[styles.transactionRow, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
+            <View style={[styles.transactionIcon, { backgroundColor: transaction.type === 'stamp' ? colors.accent : colors.secondary }]}>
+              <Ionicons
+                name={transaction.type === 'stamp' ? 'add' : 'gift-outline'}
+                size={16}
+                color={colors.primary}
+              />
+            </View>
+            <View style={styles.flexOne}>
+              <Text style={[styles.memberName, { color: colors.foreground }]}>{transaction.memberName}</Text>
+              <Text style={[styles.caption, { color: colors.mutedForeground }]} numberOfLines={1}>
+                {transaction.type === 'stamp' && transaction.stamps > 1
+                  ? `1 visit stamp + ${transaction.stamps - 1} bonus`
+                  : transaction.description} · {new Date(transaction.createdAt).toLocaleDateString()}
+              </Text>
+            </View>
+            <Text style={[styles.transactionCount, { color: transaction.type === 'stamp' ? colors.primary : colors.mutedForeground }]}>
+              {transaction.type === 'stamp' ? `+${transaction.stamps}` : `−${transaction.stamps}`}
+            </Text>
           </View>
         ))
       )}
@@ -1708,7 +1750,10 @@ function CampaignModal({
         >
           <Text style={[styles.formLabel, { color: colors.foreground }]}>CAMPAIGN TYPE</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-            {campaignTypes.map((item) => {
+            {type === 'Tier' && (
+              <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>Tier · existing campaign (type preserved)</Text>
+            )}
+            {(type === 'Tier' ? [] : campaignTypes).map((item) => {
               const selected = item === type;
               return (
                 <Pressable

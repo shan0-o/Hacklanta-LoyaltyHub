@@ -21,6 +21,9 @@ export interface Error {
 }
 
 export interface Member {
+  joinedAt?: string;
+  /** @nullable */
+  lastVisitAt?: string | null;
   id: string;
   name: string;
   points: number;
@@ -80,7 +83,27 @@ export interface RecentTransaction {
   createdAt: string;
 }
 
+export interface RetentionWeek {
+  start: string;
+  end: string;
+  activeCustomers: number;
+  repeatRate: number;
+}
+
+export interface RetentionAnalytics {
+  activeCustomers: number;
+  repeatCustomers: number;
+  repeatRate: number;
+  previousActiveCustomers: number;
+  previousRepeatRate: number;
+  comparisonAvailable: boolean;
+  activeCustomerChange: number;
+  repeatRateChange: number;
+  weeks: RetentionWeek[];
+}
+
 export interface MerchantAnalytics {
+  retention?: RetentionAnalytics;
   approvedVisits?: number;
   rewardsAvailable?: number;
   activePromotions?: number;

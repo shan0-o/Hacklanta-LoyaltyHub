@@ -7,6 +7,9 @@
  */
 
 export interface Member {
+  joinedAt?: string;
+  /** @nullable */
+  lastVisitAt?: string | null;
   id: string;
   name: string;
   points: number;

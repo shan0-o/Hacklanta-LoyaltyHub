@@ -1,0 +1,284 @@
+# LoyaltyHub — Final Merchant Interface Updates
+
+We are finalizing our existing LoyaltyHub mobile app for a hackathon.
+
+**IMPORTANT: Modify ONLY the merchant interface. The customer interface is already complete and must remain unchanged.**
+
+Do not rebuild the application, redesign the interface, reset the database, or remove working functionality.
+
+Preserve the existing cream background, dark green colors, lime accents, typography, rounded cards, and mobile-first design.
+
+The merchant interface must have exactly THREE navigation tabs:
+1. Overview
+2. Manage
+3. Members
+
+Our goal is to provide small-business owners with a simple way to manage loyalty programs, create promotions, and understand customer retention without adding unnecessary work for employees.
+
+---
+
+## 1. MERCHANT OVERVIEW PAGE
+
+Keep the existing Overview page design and layout wherever possible.
+
+### Remove unnecessary elements
+
+Remove the following from the Overview page:
+
+- Approved Visits
+- Rewards Available Now
+- Rewards Earned
+- New Members
+- Visits This Week graph
+- A Reason to Come Back
+- View Members shortcut
+- Recent Loyalty Members section
+
+Do not delete underlying database records or functionality when removing these interface elements.
+
+Keep the other existing useful merchant metrics and controls, including loyalty members, stamps rewarded, rewards redeemed, repeat customers, and active promotions.
+
+### Interactive Repeat Customers Analytics
+
+Under "Your Loyalty at a Glance," make the existing **Repeat Customers** metric clickable.
+
+When clicked, open a mobile-friendly analytics modal or expanded detail view that shows customer activity and retention over the past 30 days.
+
+Include:
+
+**Repeat Visit Rate**
+
+Calculate the percentage of unique customers with at least one approved loyalty visit in the last 30 days who made at least two distinct approved visits during that period.
+
+Formula:
+
+(Unique customers with 2+ approved visits in the past 30 days / Unique customers with 1+ approved visits in the past 30 days) × 100
+
+**Customer Activity Trend**
+
+Display a line chart showing the number of unique customers with approved loyalty activity, grouped by week over the past 30 days.
+
+**Repeat Visit Trend**
+
+Display a weekly trend of the percentage of active customers who made at least two separate approved visits within the corresponding week.
+
+**Period Comparison**
+
+Compare the latest 30-day repeat visit rate and number of active customers with the previous 30-day period.
+
+Show:
+- Increase, decrease, or no change.
+- Percentage-point change for repeat visit rate.
+- Numerical change for active customers.
+
+When historical data is insufficient, display "Not enough historical data" instead of inventing results.
+
+### Important Calculation Rules
+
+- Use real existing transaction records.
+- Count one authorized punch transaction as one approved visit.
+- Double-stamp promotions must still count as only ONE visit.
+- Reward redemption does not create an additional visit.
+- Use only data belonging to the selected merchant.
+- Do not hardcode chart data.
+- Show appropriate empty states when there is no activity.
+- Keep the analytics readable on mobile.
+
+### Move Recent Reward Activity
+
+Remove "Recent Reward Activity" from the Overview page.
+
+Move it to the Members page, preserving its data and functionality.
+
+Do not duplicate it across pages.
+
+---
+
+## 2. MERCHANT MANAGE PAGE
+
+Keep the existing Manage page design and functionality.
+
+Preserve:
+- Campaign creation.
+- Campaign editing.
+- Campaign activation and pausing.
+- Campaign deletion.
+- Rewards.
+- Promotions.
+- Events.
+- Giveaways, if currently supported.
+
+### Remove Tier Campaign Type
+
+Remove "Tier" from:
+- Campaign creation options.
+- Campaign type filters.
+- Campaign selection menus.
+
+Do not allow new Tier campaigns to be created.
+
+Preserve any previously stored Tier campaign records without deleting or corrupting data.
+
+Do not change the functionality of the other campaign types.
+
+---
+
+## 3. MERCHANT MEMBERS PAGE
+
+Keep the current Members page styling and general layout.
+
+### Add Member Sorting
+
+Add a "Sort By" dropdown beside or directly below the existing member search bar.
+
+Provide the following options:
+
+1. Most Recently Joined — default.
+2. Oldest Members.
+3. Most Recent Visit.
+4. Most Visits.
+5. Name A–Z.
+
+Use actual membership creation timestamps and approved loyalty-visit records.
+
+Customers without recorded visits should appear last when sorting by Most Recent Visit.
+
+Ensure sorting works alongside the existing search functionality.
+
+Sorting must apply only to the currently selected merchant.
+
+### Remove Points From Member Activity
+
+Remove "Points" and lifetime perk point totals from individual member cards.
+
+Instead, display:
+- Customer name.
+- Total approved loyalty visits.
+- Current stamp balance.
+- Progress toward the next reward.
+- Last approved visit date, when available.
+- Rewards redeemed, where relevant.
+
+Use actual existing data.
+
+Do not delete customer stamp balances or loyalty histories.
+
+### Recent Reward Activity
+
+Move the existing "Recent Reward Activity" section from the merchant Overview page to the Members page.
+
+Place it below the member list.
+
+Show recent:
+- Approved stamp awards.
+- Bonus stamp awards.
+- Reward redemptions.
+
+Each record should display:
+- Customer name.
+- Activity type.
+- Transaction date.
+- Stamp change, if applicable.
+- Reward name when applicable.
+
+Sort newest first.
+
+Use the existing transaction history and do not fabricate records.
+
+Show a friendly empty state if there is no activity.
+
+---
+
+## 4. PRESERVE EXISTING FUNCTIONALITY
+
+**DO NOT modify the completed customer interface.**
+
+Also preserve:
+- Existing merchant navigation.
+- Customer and merchant accounts.
+- Authentication.
+- Merchant switching.
+- Loyalty program settings.
+- Customer memberships.
+- Staff authorization codes.
+- Stamp awarding.
+- Reward unlocking.
+- Reward redemption.
+- Promotional bonus stamps.
+- Campaign activation.
+- Existing backend security rules.
+- Existing database records.
+
+Do not introduce:
+- Receipt scanning.
+- QR-code scanning.
+- POS integrations.
+- New point systems.
+- Unnecessary dependencies.
+
+Keep each merchant's data isolated from other merchants.
+
+---
+
+## 5. TESTING REQUIREMENTS
+
+### Overview
+1. Unwanted elements are removed.
+2. Remaining metrics still calculate correctly.
+3. Repeat Customers opens the 30-day analytics view.
+4. Charts display real activity and retention data.
+5. Period comparisons calculate correctly.
+6. Double-stamp transactions count as one visit.
+7. Recent Reward Activity no longer appears on Overview.
+
+### Manage
+8. Tier is removed from campaign creation and filters.
+9. Other campaign types still function.
+10. Existing campaign data is preserved.
+
+### Members
+11. Most Recently Joined sorting works.
+12. Other sorting options work correctly.
+13. Member search and sorting work together.
+14. Points no longer appear on member cards.
+15. Stamp balances and progress remain accurate.
+16. Recent Reward Activity appears on Members.
+17. Activity records are correctly ordered.
+18. Merchant switching updates the members and activity.
+
+### General
+19. Customer screens remain unchanged.
+20. Existing stamp and redemption functionality still works.
+21. No user data is lost.
+22. Mobile layout remains responsive.
+23. TypeScript and relevant backend tests pass.
+
+---
+
+## 6. IMPLEMENTATION INSTRUCTIONS
+
+We have limited time and Replit Agent credits remaining.
+
+Follow this order:
+
+**Priority 1:** Clean up Merchant Overview and move Recent Reward Activity to Members.
+
+**Priority 2:** Add the Repeat Customers analytics view.
+
+**Priority 3:** Update Members sorting and remove points.
+
+**Priority 4:** Remove Tier from Manage.
+
+Inspect existing components and data models first.
+
+Reuse existing functionality instead of creating duplicate implementations.
+
+Make the smallest changes necessary.
+
+Do not redesign completed pages or work on unrelated features.
+
+After implementing, summarize the files changed, tests completed, and any remaining issues.
+
+**Our product goal:**
+
+LoyaltyHub gives independent businesses the benefits of a modern loyalty and promotions platform without requiring a custom app, complicated integrations, or extra checkout responsibilities.

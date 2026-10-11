@@ -7,8 +7,10 @@
  */
 import type { ActivityDay } from './activityDay';
 import type { RecentTransaction } from './recentTransaction';
+import type { RetentionAnalytics } from './retentionAnalytics';
 
 export interface MerchantAnalytics {
+  retention?: RetentionAnalytics;
   approvedVisits?: number;
   rewardsAvailable?: number;
   activePromotions?: number;

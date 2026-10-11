@@ -53,6 +53,15 @@ async function main() {
     const card = customerSnapshot.businesses.find(row => row.id === businessId)!;
     assert.equal(card.members[0].stamps, 2);
     assert.equal(card.analytics, null);
+    assert.equal(card.members[0].joinedAt, undefined);
+    const ownerCard = (await getLoyaltySnapshot(owner)).businesses.find(row => row.id === businessId)!;
+    assert.equal(ownerCard.analytics?.retention?.activeCustomers, 1);
+    assert.equal(ownerCard.analytics?.retention?.repeatRate, 0, "Double stamps count as one visit");
+    assert(ownerCard.members[0].joinedAt && ownerCard.members[0].lastVisitAt);
+    await assert.rejects(createCampaign(owner, businessId, {
+      type: "Tier", title: "Blocked tier", description: "", active: true,
+      startAt: null, endAt: null, multiplier: 1, bonusStamps: 0,
+    }), /Tier/);
     assert.equal(card.history?.length, 1);
     assert(customerSnapshot.notices.some(row => row.businessId === businessId));
     const redemptionKey = randomUUID();

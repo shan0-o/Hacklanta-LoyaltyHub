@@ -438,6 +438,10 @@ components:
     Member:
       type: object
       properties:
+        joinedAt:
+          type: string
+        lastVisitAt:
+          type: [string, "null"]
         id:
           type: string
         name:
@@ -507,9 +511,47 @@ components:
         createdAt:
           type: string
       required: [id, memberName, type, stamps, description, createdAt]
+    RetentionWeek:
+      type: object
+      properties:
+        start:
+          type: string
+        end:
+          type: string
+        activeCustomers:
+          type: integer
+        repeatRate:
+          type: number
+      required: [start, end, activeCustomers, repeatRate]
+    RetentionAnalytics:
+      type: object
+      properties:
+        activeCustomers:
+          type: integer
+        repeatCustomers:
+          type: integer
+        repeatRate:
+          type: number
+        previousActiveCustomers:
+          type: integer
+        previousRepeatRate:
+          type: number
+        comparisonAvailable:
+          type: boolean
+        activeCustomerChange:
+          type: integer
+        repeatRateChange:
+          type: number
+        weeks:
+          type: array
+          items:
+            $ref: "#/components/schemas/RetentionWeek"
+      required: [activeCustomers, repeatCustomers, repeatRate, previousActiveCustomers, previousRepeatRate, comparisonAvailable, activeCustomerChange, repeatRateChange, weeks]
     MerchantAnalytics:
       type: object
       properties:
+        retention:
+          $ref: "#/components/schemas/RetentionAnalytics"
         approvedVisits:
           type: integer
         rewardsAvailable:

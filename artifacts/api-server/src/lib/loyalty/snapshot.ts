@@ -1,4 +1,5 @@
 import { and, desc, eq, gte, inArray, sql, or } from "drizzle-orm";
+import { calculateRetention } from "./retention";
 import type {
   Business as ApiBusiness,
   Campaign as ApiCampaign,
@@ -102,6 +103,7 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
       db
         .select({
           membershipId: loyaltyTransactions.membershipId,
+          lastVisitAt: sql<string | null>`max(${loyaltyTransactions.createdAt}) filter (where ${loyaltyTransactions.type} = 'stamp')`,
           visits: sql<number>`count(*) filter (where ${loyaltyTransactions.type} = 'stamp')::int`,
           lifetimeStamps: sql<number>`coalesce(sum(${loyaltyTransactions.stampDelta}) filter (where ${loyaltyTransactions.type} = 'stamp'), 0)::int`,
           redemptions: sql<number>`count(*) filter (where ${loyaltyTransactions.type} = 'redemption')::int`,
@@ -162,7 +164,7 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
   for (const business of businesses) {
     if (business.ownerUserId !== userId) continue;
 
-    const [activityRows, recentRows, totals] = await Promise.all([
+    const [activityRows, recentRows, totals, retentionVisits] = await Promise.all([
       db
         .select({
           date: sql<string>`to_char(${loyaltyTransactions.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`,
@@ -206,6 +208,14 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
         })
         .from(loyaltyTransactions)
         .where(eq(loyaltyTransactions.businessId, business.id)),
+      db.select({
+        membershipId: loyaltyTransactions.membershipId,
+        createdAt: loyaltyTransactions.createdAt,
+      }).from(loyaltyTransactions).where(and(
+        eq(loyaltyTransactions.businessId, business.id),
+        eq(loyaltyTransactions.type, "stamp"),
+        gte(loyaltyTransactions.createdAt, new Date(now.getTime() - 60 * 86_400_000)),
+      )),
     ]);
 
     const businessMembers = membersByBusiness.get(business.id) ?? [];
@@ -238,6 +248,7 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
     recentByBusiness.set(business.id, recentTransactions);
 
     analyticsByBusiness.set(business.id, {
+      retention: calculateRetention(retentionVisits, business.createdAt, now),
       approvedVisits: summaryRows.reduce((sum, row) => sum + (row?.visits ?? 0), 0),
       rewardsAvailable: businessMembers.reduce((sum, member) => sum + Math.floor(member.stampBalance / business.goal), 0),
       activePromotions: businessCampaigns.filter(campaign => campaign.type === "Promotion" && isCampaignInWindow(campaign, now)).length,
@@ -278,6 +289,10 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
       const lifetimeStamps = summary?.lifetimeStamps ?? 0;
       return {
         id: membership.id,
+        ...(isOwner ? {
+          joinedAt: membership.joinedAt.toISOString(),
+          lastVisitAt: summary?.lastVisitAt ? new Date(summary.lastVisitAt).toISOString() : null,
+        } : {}),
         name: membership.displayName,
         points: lifetimeStamps * 10,
         stamps: membership.stampBalance,

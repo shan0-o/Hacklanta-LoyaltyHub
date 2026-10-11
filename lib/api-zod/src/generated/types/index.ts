@@ -31,6 +31,8 @@ export * from './notice';
 export * from './recentTransaction';
 export * from './recentTransactionType';
 export * from './redemptionResult';
+export * from './retentionAnalytics';
+export * from './retentionWeek';
 export * from './staffActionInput';
 export * from './staffPin';
 export * from './stampResult';

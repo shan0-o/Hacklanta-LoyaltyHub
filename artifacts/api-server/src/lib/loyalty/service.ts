@@ -147,6 +147,7 @@ export async function createCampaign(
   businessId: string,
   input: CampaignInput,
 ): Promise<ApiCampaign | null> {
+  if (input.type === "Tier") throw new Error("New Tier campaigns are no longer supported.");
   const [business] = await db
     .select({ id: loyaltyBusinesses.id })
     .from(loyaltyBusinesses)
@@ -186,6 +187,9 @@ export async function updateCampaign(
     )
     .limit(1);
   if (!campaign) return null;
+  if (input.type === "Tier" && campaign.campaign.type !== "Tier") {
+    throw new Error("Campaigns cannot be converted to Tier.");
+  }
 
   const [updated] = await db
     .update(loyaltyCampaigns)
