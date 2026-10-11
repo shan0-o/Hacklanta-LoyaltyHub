@@ -9,8 +9,14 @@ Keep loyalty approvals customer-initiated: staff enter the business PIN on the c
 
 **How to apply:** Preserve this workflow when expanding loyalty features. Staff PIN is explicitly an MVP convenience; stronger staff verification can replace it later without moving transaction authority to the client.
 
-Keep demo data explicitly identified, and require owners to set their own demo staff PIN.
+The app name is LoyaltyHub. Keep demo data explicitly identified and private to the account that loaded it.
 
-**Why:** The user requires persistent, real demo transactions without hardcoded authorization or simulated production success.
+**Why:** The user requested LoyaltyHub branding and removal of repeated sample data, while retaining persistent demo transactions.
 
 **How to apply:** Demo helpers may seed sample balances but must use the same approval and redemption services afterward.
+
+Staff approval codes must be app-generated, exactly four digits, change every three hours, and carry a “do not share” warning wherever merchants can view them. Do not restore manually chosen PINs.
+
+**Why:** The user explicitly requested these security and usability rules.
+
+**How to apply:** Owner-only disclosure is separate from customer snapshots; expired codes must fail server-side even if the app has been closed.

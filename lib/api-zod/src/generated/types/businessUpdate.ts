@@ -44,6 +44,4 @@ export interface BusinessUpdate {
   /** @maxLength 1000 */
   terms?: string;
   active?: boolean;
-  /** @pattern ^[0-9]{4,8}$ */
-  staffPin?: string;
 }

@@ -9,6 +9,23 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary View the owner's current automatically rotating staff approval code
+ */
+export const GetStaffPinParams = zod.object({
+  "businessId": zod.coerce.string()
+})
+
+export const getStaffPinResponsePinRegExp = new RegExp('^[0-9]{4}$');
+
+
+export const GetStaffPinResponse = zod.object({
+  "pin": zod.string().regex(getStaffPinResponsePinRegExp),
+  "expiresAt": zod.string(),
+  "warning": zod.string()
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */
@@ -146,7 +163,6 @@ export const createBusinessBodyRewardDescriptionMax = 180;
 
 export const createBusinessBodyTermsMax = 1000;
 
-export const createBusinessBodyStaffPinRegExp = new RegExp('^[0-9]{4,8}$');
 
 
 export const CreateBusinessBody = zod.object({
@@ -158,8 +174,7 @@ export const CreateBusinessBody = zod.object({
   "programName": zod.string().min(createBusinessBodyProgramNameMin).max(createBusinessBodyProgramNameMax),
   "goal": zod.number().int().min(createBusinessBodyGoalMin).max(createBusinessBodyGoalMax),
   "rewardDescription": zod.string().min(createBusinessBodyRewardDescriptionMin).max(createBusinessBodyRewardDescriptionMax),
-  "terms": zod.string().max(createBusinessBodyTermsMax),
-  "staffPin": zod.string().regex(createBusinessBodyStaffPinRegExp)
+  "terms": zod.string().max(createBusinessBodyTermsMax)
 })
 
 export const CreateBusinessResponse = zod.object({
@@ -265,7 +280,6 @@ export const updateBusinessBodyRewardDescriptionMax = 180;
 
 export const updateBusinessBodyTermsMax = 1000;
 
-export const updateBusinessBodyStaffPinRegExp = new RegExp('^[0-9]{4,8}$');
 
 
 export const UpdateBusinessBody = zod.object({
@@ -278,8 +292,7 @@ export const UpdateBusinessBody = zod.object({
   "goal": zod.number().int().min(updateBusinessBodyGoalMin).max(updateBusinessBodyGoalMax).optional(),
   "rewardDescription": zod.string().min(updateBusinessBodyRewardDescriptionMin).max(updateBusinessBodyRewardDescriptionMax).optional(),
   "terms": zod.string().max(updateBusinessBodyTermsMax).optional(),
-  "active": zod.boolean().optional(),
-  "staffPin": zod.string().regex(updateBusinessBodyStaffPinRegExp).optional()
+  "active": zod.boolean().optional()
 })
 
 export const UpdateBusinessResponse = zod.object({
@@ -464,7 +477,7 @@ export const RequestStampParams = zod.object({
   "businessId": zod.coerce.string()
 })
 
-export const requestStampBodyStaffPinRegExp = new RegExp('^[0-9]{4,8}$');
+export const requestStampBodyStaffPinRegExp = new RegExp('^[0-9]{4}$');
 export const requestStampBodyIdempotencyKeyMin = 8;
 export const requestStampBodyIdempotencyKeyMax = 120;
 
@@ -491,7 +504,7 @@ export const RedeemRewardParams = zod.object({
   "businessId": zod.coerce.string()
 })
 
-export const redeemRewardBodyStaffPinRegExp = new RegExp('^[0-9]{4,8}$');
+export const redeemRewardBodyStaffPinRegExp = new RegExp('^[0-9]{4}$');
 export const redeemRewardBodyIdempotencyKeyMin = 8;
 export const redeemRewardBodyIdempotencyKeyMax = 120;
 

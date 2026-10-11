@@ -23,6 +23,7 @@ import {
 } from "../lib/loyalty/service";
 import { requestCustomerStamp, redeemCustomerReward } from "../lib/loyalty/transactions";
 import { getLoyaltySnapshot } from "../lib/loyalty/snapshot";
+import { currentStaffPin } from "../lib/loyalty/security";
 import type { ActionOutcome } from "../lib/loyalty/transactions";
 
 const router: IRouter = Router();
@@ -60,7 +61,7 @@ function text(
 }
 
 function pin(value: unknown): value is string {
-  return typeof value === "string" && /^[0-9]{4,8}$/.test(value);
+  return typeof value === "string" && /^[0-9]{4}$/.test(value);
 }
 
 function validLogo(value: unknown): boolean {
@@ -84,7 +85,7 @@ function parseBusinessInput(value: unknown): BusinessInput | null {
     !text(value.rewardDescription, 2, 180) ||
     typeof value.terms !== "string" ||
     value.terms.length > 1000 ||
-    !pin(value.staffPin)
+    value.staffPin !== undefined
   ) {
     return null;
   }
@@ -98,7 +99,6 @@ function parseBusinessInput(value: unknown): BusinessInput | null {
     goal: value.goal as number,
     rewardDescription: value.rewardDescription,
     terms: value.terms,
-    staffPin: value.staffPin,
   };
 }
 
@@ -142,11 +142,7 @@ function parseBusinessUpdate(value: unknown): BusinessUpdate | null {
     parsed.active = value.active;
     fields += 1;
   }
-  if (value.staffPin !== undefined) {
-    if (!pin(value.staffPin)) return null;
-    parsed.staffPin = value.staffPin;
-    fields += 1;
-  }
+  if (value.staffPin !== undefined) return null;
   return fields > 0 ? parsed : null;
 }
 
@@ -270,6 +266,13 @@ router.get("/loyalty", async (_req, res) => {
   res.json(snapshot);
 });
 
+router.get("/businesses/:businessId/staff-pin", async (req, res) => {
+  res.set("Cache-Control", "no-store, private");
+  const code = await currentStaffPin(req.params.businessId, signedInUserId(res));
+  if (!code) { res.status(404).json({ error: "Business not found." }); return; }
+  res.json(code);
+});
+
 router.post("/loyalty/demo-seed", async (req, res) => {
   if (
     !isRecord(req.body) ||
@@ -293,7 +296,7 @@ router.post("/loyalty/demo-seed", async (req, res) => {
 router.post("/businesses", async (req, res) => {
   const input = parseBusinessInput(req.body);
   if (!input) {
-    res.status(400).json({ error: "Check the business, program, and staff PIN fields." });
+    res.status(400).json({ error: "Check the business and program fields. Staff codes are generated automatically." });
     return;
   }
   const business = await createBusiness(signedInUserId(res), input);

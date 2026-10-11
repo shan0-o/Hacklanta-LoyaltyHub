@@ -59,7 +59,7 @@ export function LoyaltyActionModal({
   }
 
   async function confirm() {
-    if (!business || pin.length < 4 || isSubmitting) return;
+    if (!business || pin.length !== 4 || isSubmitting) return;
     setIsSubmitting(true);
     setError("");
     try {
@@ -193,20 +193,20 @@ export function LoyaltyActionModal({
                   STAFF APPROVAL PIN
                 </Text>
                 <Text style={[styles.pinHelp, { color: colors.mutedForeground }]}>
-                  Ask staff to enter their private 4–8 digit PIN.
+                  Ask staff to enter their current private four-digit PIN.
                 </Text>
                 <TextInput
                   testID="staff-approval-pin"
                   value={pin}
                   onChangeText={(value) => {
-                    setPin(value.replace(/[^0-9]/g, "").slice(0, 8));
+                    setPin(value.replace(/[^0-9]/g, "").slice(0, 4));
                     setError("");
                   }}
                   placeholder="••••"
                   placeholderTextColor={colors.mutedForeground}
                   keyboardType="number-pad"
                   secureTextEntry
-                  maxLength={8}
+                  maxLength={4}
                   autoFocus={Platform.OS === "web"}
                   style={[
                     styles.pinInput,
@@ -227,12 +227,12 @@ export function LoyaltyActionModal({
               <Pressable
                 testID={isStamp ? "confirm-stamp" : `confirm-redemption-${business?.id}`}
                 onPress={() => void confirm()}
-                disabled={pin.length < 4 || isSubmitting}
+                disabled={pin.length !== 4 || isSubmitting}
                 style={({ pressed }) => [
                   styles.primaryButton,
                   {
                     backgroundColor: colors.primary,
-                    opacity: pin.length < 4 || isSubmitting ? 0.55 : pressed ? 0.82 : 1,
+                    opacity: pin.length !== 4 || isSubmitting ? 0.55 : pressed ? 0.82 : 1,
                   },
                 ]}
               >

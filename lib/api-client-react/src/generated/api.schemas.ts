@@ -5,6 +5,13 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+export interface StaffPin {
+  /** @pattern ^[0-9]{4}$ */
+  pin: string;
+  expiresAt: string;
+  warning: string;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -172,8 +179,6 @@ export interface BusinessInput {
   rewardDescription: string;
   /** @maxLength 1000 */
   terms: string;
-  /** @pattern ^[0-9]{4,8}$ */
-  staffPin: string;
 }
 
 export interface BusinessUpdate {
@@ -214,8 +219,6 @@ export interface BusinessUpdate {
   /** @maxLength 1000 */
   terms?: string;
   active?: boolean;
-  /** @pattern ^[0-9]{4,8}$ */
-  staffPin?: string;
 }
 
 export type CampaignInputType = typeof CampaignInputType[keyof typeof CampaignInputType];
@@ -275,7 +278,7 @@ export interface FavoriteResult {
 }
 
 export interface StaffActionInput {
-  /** @pattern ^[0-9]{4,8}$ */
+  /** @pattern ^[0-9]{4}$ */
   staffPin: string;
   /**
      * @minLength 8

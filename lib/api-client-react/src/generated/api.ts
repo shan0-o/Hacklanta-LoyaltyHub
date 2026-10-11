@@ -38,6 +38,7 @@ import type {
   NotFoundResponse,
   RedemptionResult,
   StaffActionInput,
+  StaffPin,
   StampResult,
   UnauthorizedResponse
 } from './api.schemas';
@@ -68,6 +69,83 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGetStaffPinUrl = (businessId: string,) => {
+
+
+
+
+  return `/api/businesses/${businessId}/staff-pin`
+}
+
+/**
+ * @summary View the owner's current automatically rotating staff approval code
+ */
+export const getStaffPin = async (businessId: string, options?: Parameters<typeof customFetch>[1]): Promise<StaffPin> => {
+
+  return customFetch<StaffPin>(getGetStaffPinUrl(businessId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStaffPinQueryKey = (businessId: string,) => {
+    return [
+    `/api/businesses/${businessId}/staff-pin`
+    ] as const;
+    }
+
+
+export const getGetStaffPinQueryOptions = <TData = Awaited<ReturnType<typeof getStaffPin>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(businessId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStaffPin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStaffPinQueryKey(businessId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStaffPin>>> = ({ signal }) => getStaffPin(businessId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: businessId !== null && businessId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStaffPin>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStaffPinQueryResult = NonNullable<Awaited<ReturnType<typeof getStaffPin>>>
+export type GetStaffPinQueryError = ErrorType<UnauthorizedResponse | NotFoundResponse>
+
+
+/**
+ * @summary View the owner's current automatically rotating staff approval code
+ */
+
+export function useGetStaffPin<TData = Awaited<ReturnType<typeof getStaffPin>>, TError = ErrorType<UnauthorizedResponse | NotFoundResponse>>(
+ businessId: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStaffPin>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStaffPinQueryOptions(businessId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getHealthCheckUrl = () => {
 

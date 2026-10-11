@@ -238,7 +238,7 @@ export default function AuthenticationScreen() {
           <View style={[styles.brandIcon, { backgroundColor: colors.primary }]}>
             <Ionicons name="sparkles" size={18} color={colors.accent} />
           </View>
-          <Text style={[styles.brandName, { color: colors.foreground }]}>perkind</Text>
+          <Text style={[styles.brandName, { color: colors.foreground }]}>LoyaltyHub</Text>
         </View>
 
         <View style={[styles.welcomeCard, { backgroundColor: colors.primary }]}>

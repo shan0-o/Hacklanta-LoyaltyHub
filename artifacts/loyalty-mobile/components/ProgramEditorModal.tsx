@@ -15,7 +15,7 @@ import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollV
 import type { Business, BusinessInput } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 
-type ProgramFields = Omit<BusinessInput, "staffPin"> & { staffPin?: string };
+type ProgramFields = BusinessInput;
 
 export function ProgramEditorModal({
   visible,
@@ -38,8 +38,6 @@ export function ProgramEditorModal({
   const [goal, setGoal] = useState("8");
   const [rewardDescription, setRewardDescription] = useState("");
   const [terms, setTerms] = useState("");
-  const [staffPin, setStaffPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -54,8 +52,6 @@ export function ProgramEditorModal({
     setGoal(String(business?.goal ?? 8));
     setRewardDescription(business?.rewardDescription ?? "");
     setTerms(business?.terms ?? "");
-    setStaffPin("");
-    setConfirmPin("");
     setError("");
   }, [business, visible]);
 
@@ -74,18 +70,6 @@ export function ProgramEditorModal({
       setError("Describe the reward customers can earn.");
       return;
     }
-    if (!business && !/^[0-9]{4,8}$/.test(staffPin)) {
-      setError("Set a staff PIN with 4–8 digits.");
-      return;
-    }
-    if (staffPin && !/^[0-9]{4,8}$/.test(staffPin)) {
-      setError("A new staff PIN must have 4–8 digits.");
-      return;
-    }
-    if (staffPin && staffPin !== confirmPin) {
-      setError("The PIN entries do not match.");
-      return;
-    }
 
     setSaving(true);
     setError("");
@@ -100,7 +84,6 @@ export function ProgramEditorModal({
         goal: numericGoal,
         rewardDescription: rewardDescription.trim(),
         terms: terms.trim(),
-        ...(staffPin ? { staffPin } : {}),
       };
       await onSave(fields, business?.id);
     } catch (saveError) {
@@ -183,30 +166,9 @@ export function ProgramEditorModal({
               <Text style={[styles.pinTitle, { color: colors.foreground }]}>Staff approval PIN</Text>
             </View>
             <Text style={[styles.pinHelp, { color: colors.mutedForeground }]}>
-              {business
-                ? "Enter a new PIN only if you want to replace the current one. It is never shown again."
-                : "Staff enter this PIN to approve each stamp or redemption. It is stored as a secure hash."}
+              LoyaltyHub randomly generates a four-digit code that changes every three hours.
+              View it in your merchant overview. Do not share the code with customers or anyone else.
             </Text>
-            <Field
-              label={business ? "NEW PIN (OPTIONAL)" : "SET PIN"}
-              value={staffPin}
-              onChange={(value) => setStaffPin(value.replace(/[^0-9]/g, "").slice(0, 8))}
-              placeholder="4–8 digits"
-              style={fieldStyle}
-              keyboardType="number-pad"
-              secureTextEntry
-            />
-            {!!staffPin && (
-              <Field
-                label="CONFIRM PIN"
-                value={confirmPin}
-                onChange={(value) => setConfirmPin(value.replace(/[^0-9]/g, "").slice(0, 8))}
-                placeholder="Enter it again"
-                style={fieldStyle}
-                keyboardType="number-pad"
-                secureTextEntry
-              />
-            )}
           </View>
           {!!error && (
             <Text accessibilityRole="alert" style={[styles.error, { color: colors.destructive }]}>

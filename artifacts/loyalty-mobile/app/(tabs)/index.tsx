@@ -26,6 +26,7 @@ import {
   useLoyalty,
 } from '@/context/LoyaltyContext';
 import { ProgramEditorModal } from '@/components/ProgramEditorModal';
+import { MerchantStaffPin } from '@/components/MerchantStaffPin';
 import { LoyaltyActionModal } from '@/components/LoyaltyActionModal';
 import { MerchantActivityChart } from '@/components/MerchantActivityChart';
 
@@ -256,15 +257,12 @@ export default function LoyaltyHome() {
   }
 
   async function handleProgramSave(
-    input: Omit<import('@workspace/api-client-react').BusinessInput, 'staffPin'> & {
-      staffPin?: string;
-    },
+    input: import('@workspace/api-client-react').BusinessInput,
     businessId?: string,
   ) {
     if (businessId) {
       await updateBusiness(businessId, input);
     } else {
-      if (!input.staffPin) throw new Error('Set a staff approval PIN.');
       await createBusiness(input as import('@workspace/api-client-react').BusinessInput);
       setRole('merchant');
       setTab('overview');
@@ -349,7 +347,7 @@ export default function LoyaltyHome() {
           <View style={[styles.brandIcon, { backgroundColor: colors.primary }]}>
             <Ionicons name="sparkles" size={15} color={colors.accent} />
           </View>
-          <Text style={[styles.brandName, { color: colors.foreground }]}>perkind</Text>
+          <Text style={[styles.brandName, { color: colors.foreground }]}>LoyaltyHub</Text>
         </View>
         <View style={styles.topActions}>
           {role === 'customer' && (
@@ -489,7 +487,7 @@ export default function LoyaltyHome() {
             </View>
             <Text style={[styles.emptyMerchantTitle, { color: colors.foreground }]}>Set up your loyalty program</Text>
             <Text style={[styles.emptyMerchantText, { color: colors.mutedForeground }]}>
-              Create a business, set the reward goal, and choose a private staff PIN for approving customer requests.
+              Create a business and set the reward goal. LoyaltyHub generates a private four-digit staff code that changes every three hours.
             </Text>
             <Pressable
               testID="create-business"
@@ -1150,15 +1148,14 @@ function MerchantOverview({
         <View style={[styles.repeatCard, { backgroundColor: colors.secondary }]}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Guided demo · sample data</Text>
           <Text style={[styles.bodyText, { color: colors.mutedForeground }]}>
-            Select Daybreak Coffee. Set your own staff PIN in “Edit program & PIN.” Its double-stamp promotion is active.
+            Select Daybreak Coffee. View the current four-digit staff code below. It changes every three hours; do not share it.
+            Its double-stamp promotion is active.
             Switch to Customer → My cards → Get Stamp. Staff approval adds 2 stamps, taking the sample card from 6 to 8.
             Then Redeem Reward with a new PIN approval. Return here to see the recorded visit and redemption.
           </Text>
         </View>
       )}
-      {!business.staffPinConfigured && (
-        <Text style={[styles.bodyText, { color: colors.destructive }]}>Set a staff PIN in program settings before testing stamps or redemptions.</Text>
-      )}
+      <MerchantStaffPin key={business.id} businessId={business.id} />
       <View style={[styles.merchantHero, { backgroundColor: colors.primary }]}>
         <View style={styles.heroTop}>
           <View style={styles.heroBrand}>
@@ -1239,7 +1236,7 @@ function MerchantOverview({
           <View style={[styles.quickActionIcon, { backgroundColor: colors.secondary }]}>
             <Ionicons name="settings-outline" size={17} color={colors.primary} />
           </View>
-          <Text style={[styles.quickActionTitle, { color: colors.foreground }]}>Edit program & PIN</Text>
+          <Text style={[styles.quickActionTitle, { color: colors.foreground }]}>Edit loyalty program</Text>
           <Ionicons name="arrow-forward" size={16} color={colors.mutedForeground} />
         </Pressable>
         <Pressable

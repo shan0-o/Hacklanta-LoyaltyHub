@@ -43,6 +43,4 @@ export interface BusinessInput {
   rewardDescription: string;
   /** @maxLength 1000 */
   terms: string;
-  /** @pattern ^[0-9]{4,8}$ */
-  staffPin: string;
 }

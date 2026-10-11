@@ -13,6 +13,27 @@ tags:
   - name: loyalty
     description: Authenticated loyalty app operations
 paths:
+  /businesses/{businessId}/staff-pin:
+    get:
+      operationId: getStaffPin
+      summary: View the owner's current automatically rotating staff approval code
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Private owner-only four-digit code
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffPin"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
   /healthz:
     get:
       operationId: healthCheck
@@ -390,6 +411,17 @@ components:
           schema:
             $ref: "#/components/schemas/Error"
   schemas:
+    StaffPin:
+      type: object
+      properties:
+        pin:
+          type: string
+          pattern: "^[0-9]{4}$"
+        expiresAt:
+          type: string
+        warning:
+          type: string
+      required: [pin, expiresAt, warning]
     HealthStatus:
       type: object
       properties:
@@ -651,10 +683,7 @@ components:
         terms:
           type: string
           maxLength: 1000
-        staffPin:
-          type: string
-          pattern: "^[0-9]{4,8}$"
-      required: [name, category, location, description, programName, goal, rewardDescription, terms, staffPin]
+      required: [name, category, location, description, programName, goal, rewardDescription, terms]
     BusinessUpdate:
       type: object
       properties:
@@ -693,9 +722,6 @@ components:
           maxLength: 1000
         active:
           type: boolean
-        staffPin:
-          type: string
-          pattern: "^[0-9]{4,8}$"
       minProperties: 1
     CampaignInput:
       type: object
@@ -751,7 +777,7 @@ components:
       properties:
         staffPin:
           type: string
-          pattern: "^[0-9]{4,8}$"
+          pattern: "^[0-9]{4}$"
         idempotencyKey:
           type: string
           minLength: 8

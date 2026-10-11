@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, or } from "drizzle-orm";
 import type {
   Business as ApiBusiness,
   BusinessInput,
@@ -15,11 +15,9 @@ import {
   loyaltyFavorites,
   loyaltyMemberships,
   loyaltyNotices,
-  staffPinAttempts,
-  staffPinCredentials,
 } from "@workspace/db";
 import { randomUUID } from "node:crypto";
-import { hashStaffPin } from "./security";
+import { currentStaffPin } from "./security";
 import { getLoyaltySnapshot } from "./snapshot";
 
 export async function createBusiness(
@@ -27,7 +25,6 @@ export async function createBusiness(
   input: BusinessInput,
 ): Promise<ApiBusiness> {
   const id = randomUUID();
-  const credentials = await hashStaffPin(input.staffPin);
   await db.transaction(async (tx) => {
     await tx.insert(loyaltyBusinesses).values({
       id,
@@ -43,11 +40,8 @@ export async function createBusiness(
       terms: input.terms.trim(),
       active: true,
     });
-    await tx.insert(staffPinCredentials).values({
-      businessId: id,
-      ...credentials,
-    });
   });
+  await currentStaffPin(id, ownerUserId);
   const snapshot = await getLoyaltySnapshot(ownerUserId);
   const created = snapshot.businesses.find((business) => business.id === id);
   if (!created) throw new Error("Created business was not available in its snapshot");
@@ -92,26 +86,6 @@ export async function updateBusiness(
         .update(loyaltyBusinesses)
         .set(updates)
         .where(eq(loyaltyBusinesses.id, businessId));
-    }
-    if (input.staffPin !== undefined) {
-      const credentials = await hashStaffPin(input.staffPin);
-      await tx
-        .insert(staffPinCredentials)
-        .values({
-          businessId,
-          ...credentials,
-          updatedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: staffPinCredentials.businessId,
-          set: {
-            ...credentials,
-            updatedAt: new Date(),
-          },
-        });
-      await tx
-        .delete(staffPinAttempts)
-        .where(eq(staffPinAttempts.businessId, businessId));
     }
   });
 
@@ -255,6 +229,7 @@ export async function joinBusiness(
       and(
         eq(loyaltyBusinesses.id, businessId),
         eq(loyaltyBusinesses.active, true),
+        or(eq(loyaltyBusinesses.isDemo, false), eq(loyaltyBusinesses.ownerUserId, userId)),
       ),
     )
     .limit(1);
@@ -287,6 +262,7 @@ export async function setFavorite(
       and(
         eq(loyaltyBusinesses.id, businessId),
         eq(loyaltyBusinesses.active, true),
+        or(eq(loyaltyBusinesses.isDemo, false), eq(loyaltyBusinesses.ownerUserId, userId)),
       ),
     )
     .limit(1);

@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { db, pool, loyaltyBusinesses, staffPinCredentials } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { db, pool, loyaltyBusinesses, staffPinCredentials, staffPinAttempts } from "@workspace/db";
+import { eq, inArray } from "drizzle-orm";
 import { createBusiness, updateBusiness, createCampaign, joinBusiness } from "./service";
 import { getLoyaltySnapshot } from "./snapshot";
 import { requestCustomerStamp, redeemCustomerReward } from "./transactions";
+import { currentStaffPin, PIN_LIFETIME_MS } from "./security";
+import { seedDemoWorkspace } from "./demo";
 
 // Development integration checks. Creates isolated records and deletes only
 // those records at the end; never run against a production connection.
@@ -12,19 +14,26 @@ async function main() {
   assert.notEqual(process.env.NODE_ENV, "production");
   const owner = `test-owner-${randomUUID()}`;
   const customer = `test-customer-${randomUUID()}`;
-  const pin = String(Math.floor(100000 + Math.random() * 900000));
-  const otherPin = pin === "000000" ? "111111" : "000000";
   let businessId = "";
   try {
     const business = await createBusiness(owner, {
       name: "Integration test shop", category: "Test", location: "Test",
       description: "", programName: "Test card", goal: 2,
-      rewardDescription: "Test reward", terms: "", staffPin: pin,
+      rewardDescription: "Test reward", terms: "",
     });
     businessId = business.id;
+    const issued = await currentStaffPin(businessId, owner);
+    assert(issued && /^\d{4}$/.test(issued.pin), "Generated code must be exactly four digits");
+    const pin = issued.pin;
+    const otherPin = pin === "0000" ? "1111" : "0000";
+    assert(Date.parse(issued.expiresAt) - Date.now() <= PIN_LIFETIME_MS);
+    assert(Date.parse(issued.expiresAt) - Date.now() > PIN_LIFETIME_MS - 60_000);
+    assert.equal(await currentStaffPin(businessId, customer), null);
+    assert((await currentStaffPin(businessId, owner))?.pin === pin, "Code must persist between reads");
     await joinBusiness(customer, "Test customer", businessId);
     const [credential] = await db.select().from(staffPinCredentials).where(eq(staffPinCredentials.businessId, businessId));
-    assert.notEqual(credential.pinHash, pin);
+    assert(credential.pinHash !== pin && !credential.encryptedPin?.includes(pin), "Code must not be stored in plaintext");
+    assert.equal((await requestCustomerStamp(customer, businessId, "12345", randomUUID())).status, "invalid-pin");
     assert.equal(await updateBusiness(customer, businessId, { name: "Unauthorized" }), null);
     assert.equal((await requestCustomerStamp(owner, businessId, pin, randomUUID())).status, "not-member");
     assert.equal((await redeemCustomerReward(customer, businessId, pin, randomUUID())).status, "insufficient-stamps");
@@ -76,11 +85,27 @@ async function main() {
     }
     assert.equal((await requestCustomerStamp(customer, businessId, otherPin, randomUUID())).status, "pin-locked");
     assert.equal((await requestCustomerStamp(customer, businessId, pin, randomUUID())).status, "pin-locked");
-    await updateBusiness(owner, businessId, { staffPin: pin });
-    assert.equal((await requestCustomerStamp(customer, businessId, pin, randomUUID())).status, "ok");
-    console.log("PASS: ownership, hashing, invalid PIN, insufficient balance, double stamps, concurrent duplicate awards/redemptions, notices, history, analytics, bonus/no stacking, preserved progress, paused wallet, lockout and owner reset.");
+    // Expire only the isolated test credential; no waiting three hours or changes to real businesses.
+    await db.update(staffPinCredentials).set({ expiresAt: new Date(Date.now() - 1) }).where(eq(staffPinCredentials.businessId, businessId));
+    const rotated = await currentStaffPin(businessId, owner);
+    assert(rotated && /^\d{4}$/.test(rotated.pin) && rotated.pin !== pin, "Rotation must generate a different four-digit code");
+    assert.equal((await requestCustomerStamp(customer, businessId, rotated.pin, randomUUID())).status, "pin-locked");
+    // Simulate the end of this test business's lockout.
+    await db.delete(staffPinAttempts).where(eq(staffPinAttempts.businessId, businessId));
+    assert.equal((await requestCustomerStamp(customer, businessId, pin, randomUUID())).status, "invalid-pin");
+    assert.equal((await requestCustomerStamp(customer, businessId, rotated.pin, randomUUID())).status, "ok");
+    assert.equal(await seedDemoWorkspace(owner, "Demo owner"), true);
+    assert.equal(await seedDemoWorkspace(owner, "Demo owner"), false);
+    assert.equal(await seedDemoWorkspace(customer, "Demo customer"), true);
+    const ownerDemo = (await getLoyaltySnapshot(owner)).businesses.filter(row => row.isDemo);
+    const customerDemo = (await getLoyaltySnapshot(customer)).businesses.filter(row => row.isDemo);
+    assert.equal(ownerDemo.length, 3);
+    assert.equal(customerDemo.length, 3);
+    assert(ownerDemo.every(row => row.isOwner && !customerDemo.some(other => other.id === row.id)));
+    assert.equal(await joinBusiness(customer, "Not allowed", ownerDemo[0].id), false);
+    console.log("PASS: automatic four-digit codes, encrypted storage, owner-only disclosure, three-hour expiration, previous code rejection, lockout survives rotation, no duplicate demo seed, demo isolation, approvals, redemptions and balances.");
   } finally {
-    if (businessId) await db.delete(loyaltyBusinesses).where(eq(loyaltyBusinesses.id, businessId));
+    await db.delete(loyaltyBusinesses).where(inArray(loyaltyBusinesses.ownerUserId, [owner, customer]));
     await pool.end();
   }
 }

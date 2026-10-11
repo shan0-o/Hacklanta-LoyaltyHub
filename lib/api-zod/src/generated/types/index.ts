@@ -32,5 +32,6 @@ export * from './recentTransaction';
 export * from './recentTransactionType';
 export * from './redemptionResult';
 export * from './staffActionInput';
+export * from './staffPin';
 export * from './stampResult';
 export * from './unauthorizedResponse';

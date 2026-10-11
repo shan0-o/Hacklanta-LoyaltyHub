@@ -1,6 +1,6 @@
 kind = "mobile"
 previewPath = "/"
-title = "Loyalty Loop"
+title = "LoyaltyHub"
 description = "A mobile loyalty app with a merchant workspace for managing promotions, rewards, tiers, events, giveaways, and loyalty analytics, plus a customer experience for digital stamp cards, points, favorite stores, and redeemable reward notifications."
 version = "1.0.0"
 id = "artifacts/loyalty-mobile"

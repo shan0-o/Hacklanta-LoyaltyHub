@@ -66,7 +66,7 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
   const businessMap = new Map(
     [...publicRows, ...ownedRows, ...joinedRows.map(row => row.business)].map((business) => [business.id, business]),
   );
-  const businesses = [...businessMap.values()].sort((left, right) =>
+  const businesses = [...businessMap.values()].filter(business => !business.isDemo || business.ownerUserId === userId).sort((left, right) =>
     left.name.localeCompare(right.name),
   );
   if (businesses.length === 0) {
@@ -327,8 +327,8 @@ export async function getLoyaltySnapshot(userId: string): Promise<LoyaltySnapsho
 
   return {
     businesses: snapshotBusinesses,
-    favorites: favoriteRows.map((row) => row.businessId),
-    notices: noticeRows.map((notice) => ({
+    favorites: favoriteRows.filter(row => businessIds.includes(row.businessId)).map((row) => row.businessId),
+    notices: noticeRows.filter(row => businessIds.includes(row.businessId)).map((notice) => ({
       id: notice.id,
       businessId: notice.businessId,
       message: notice.message,

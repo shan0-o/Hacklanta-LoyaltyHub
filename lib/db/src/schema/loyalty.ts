@@ -43,6 +43,8 @@ export const staffPinCredentials = pgTable("staff_pin_credentials", {
     .references(() => loyaltyBusinesses.id, { onDelete: "cascade" }),
   salt: text("salt").notNull(),
   pinHash: text("pin_hash").notNull(),
+  encryptedPin: text("encrypted_pin"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

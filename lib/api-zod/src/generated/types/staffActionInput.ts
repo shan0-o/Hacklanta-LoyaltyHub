@@ -7,7 +7,7 @@
  */
 
 export interface StaffActionInput {
-  /** @pattern ^[0-9]{4,8}$ */
+  /** @pattern ^[0-9]{4}$ */
   staffPin: string;
   /**
      * @minLength 8
